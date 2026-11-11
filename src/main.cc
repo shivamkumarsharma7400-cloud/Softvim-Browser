@@ -7,6 +7,7 @@
 // 3. The main browser process runs the message loop until quit.
 
 #include <windows.h>
+#include <shlwapi.h>
 
 #include "app.h"
 #include "include/cef_app.h"
@@ -50,14 +51,16 @@ int APIENTRY wWinMain(HINSTANCE hInstance,
 
   // Configure CEF settings.
   CefSettings settings;
-
-  // Disable the sandbox for development.
-  // The sandbox adds security but complicates debugging.
   settings.no_sandbox = true;
 
-  // Use the same executable for subprocesses.
-  // (Alternatively, we could specify SoftvimHelper.exe here.)
-  // CefString(&settings.browser_subprocess_path) = "SoftvimHelper.exe";
+  // Specify the dedicated subprocess helper path
+  wchar_t helperPath[MAX_PATH];
+  GetModuleFileNameW(nullptr, helperPath, MAX_PATH);
+  PathRemoveFileSpecW(helperPath);
+  PathAppendW(helperPath, L"SoftvimHelper.exe");
+  if (GetFileAttributesW(helperPath) != INVALID_FILE_ATTRIBUTES) {
+    CefString(&settings.browser_subprocess_path) = helperPath;
+  }
 
   // Set the log severity (only warnings and errors in release).
 #ifdef NDEBUG

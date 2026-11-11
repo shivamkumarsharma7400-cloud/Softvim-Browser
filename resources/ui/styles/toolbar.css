@@ -1,9 +1,7 @@
-/* Softvim Browser — Toolbar and Navigation Styling
- * Implements the Apple Safari-inspired top bar aesthetic.
- */
+/* Softvim Browser — Apple Safari Inspired Toolbar & Chrome Styling */
 
 :root {
-    --toolbar-height: 48px;
+    --toolbar-height: 46px;
     --tabbar-height: 38px;
 }
 
@@ -16,6 +14,8 @@ body {
     height: 100vh;
     margin: 0;
     overflow: hidden;
+    font-family: var(--font-family);
+    -webkit-font-smoothing: antialiased;
 }
 
 /* Chrome container holding tabs and navigation bar */
@@ -24,8 +24,8 @@ body {
     flex-direction: column;
     background: var(--bg);
     border-bottom: 1px solid var(--border);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(25px);
+    -webkit-backdrop-filter: blur(25px);
     z-index: 100;
 }
 
@@ -37,8 +37,8 @@ body {
     height: var(--tabbar-height);
     display: flex;
     align-items: center;
-    padding: 0 var(--space-2);
-    gap: var(--space-1);
+    padding: 0 var(--space-3);
+    gap: 6px;
     background: transparent;
     overflow-x: auto;
 }
@@ -51,18 +51,18 @@ body {
     display: flex;
     align-items: center;
     height: 28px;
-    max-width: 220px;
-    min-width: 120px;
-    padding: 0 var(--space-2);
+    max-width: 200px;
+    min-width: 110px;
+    padding: 0 10px;
     border-radius: var(--radius-md);
     background: transparent;
     color: var(--text-secondary);
     font-size: var(--font-size-sm);
-    font-weight: var(--font-weight-medium);
+    font-weight: 500;
     cursor: pointer;
-    transition: background var(--transition-fast), color var(--transition-fast);
+    transition: background 150ms ease, color 150ms ease, box-shadow 150ms ease;
     position: relative;
-    gap: var(--space-2);
+    gap: 8px;
 }
 
 .tab:hover {
@@ -73,14 +73,19 @@ body {
 .tab.active {
     background: var(--surface);
     color: var(--text-primary);
-    box-shadow: 0 1px 3px var(--shadow);
+    box-shadow: 0 1px 4px var(--shadow), 0 0 0 1px var(--border);
+}
+
+.tab.private-tab {
+    border-left: 2px solid #AF52DE;
 }
 
 .tab-favicon {
     width: 14px;
     height: 14px;
     flex-shrink: 0;
-    border-radius: 2px;
+    border-radius: 3px;
+    opacity: 0.85;
 }
 
 .tab-title {
@@ -88,6 +93,7 @@ body {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    letter-spacing: -0.01em;
 }
 
 .tab-close {
@@ -98,29 +104,32 @@ body {
     justify-content: center;
     border-radius: var(--radius-sm);
     opacity: 0;
-    transition: opacity var(--transition-fast), background var(--transition-fast);
+    transition: opacity 120ms ease, background 120ms ease;
+    flex-shrink: 0;
 }
 
 .tab:hover .tab-close,
 .tab.active .tab-close {
-    opacity: 0.6;
+    opacity: 0.55;
 }
 
 .tab-close:hover {
     opacity: 1 !important;
     background: var(--hover);
+    color: var(--text-primary);
 }
 
 .new-tab-btn {
-    width: 28px;
-    height: 28px;
+    width: 26px;
+    height: 26px;
     border-radius: var(--radius-md);
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
     color: var(--text-secondary);
-    transition: background var(--transition-fast), color var(--transition-fast);
+    transition: background 150ms ease, color 150ms ease;
+    flex-shrink: 0;
 }
 
 .new-tab-btn:hover {
@@ -143,12 +152,12 @@ body {
 .nav-group {
     display: flex;
     align-items: center;
-    gap: var(--space-1);
+    gap: 2px;
 }
 
 .action-btn {
-    width: 32px;
-    height: 32px;
+    width: 30px;
+    height: 30px;
     border-radius: var(--radius-md);
     display: flex;
     align-items: center;
@@ -157,7 +166,7 @@ body {
     border: none;
     color: var(--text-primary);
     cursor: pointer;
-    transition: background var(--transition-fast), opacity var(--transition-fast);
+    transition: background 120ms ease, opacity 120ms ease, transform 80ms ease;
 }
 
 .action-btn:hover:not(:disabled) {
@@ -166,6 +175,7 @@ body {
 
 .action-btn:active:not(:disabled) {
     background: var(--active);
+    transform: scale(0.96);
 }
 
 .action-btn:disabled {
@@ -174,8 +184,8 @@ body {
 }
 
 .action-btn svg {
-    width: 16px;
-    height: 16px;
+    width: 15px;
+    height: 15px;
     stroke: currentColor;
     stroke-width: 1.75;
     fill: none;
@@ -191,7 +201,7 @@ body {
     flex: 1;
     display: flex;
     justify-content: center;
-    max-width: 700px;
+    max-width: 650px;
     margin: 0 auto;
 }
 
@@ -200,27 +210,28 @@ body {
     height: 32px;
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
+    border-radius: 16px;
     display: flex;
     align-items: center;
-    padding: 0 var(--space-3);
-    gap: var(--space-2);
+    padding: 0 10px;
+    gap: 8px;
     box-shadow: 0 1px 2px var(--shadow);
-    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+    transition: border-color 150ms ease, box-shadow 150ms ease, width 200ms ease;
 }
 
 .address-bar:focus-within {
     border-color: var(--accent);
-    box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.15);
+    box-shadow: 0 0 0 2.5px rgba(0, 122, 255, 0.18);
 }
 
 .address-icon {
-    width: 14px;
-    height: 14px;
+    width: 15px;
+    height: 15px;
     color: var(--text-secondary);
     display: flex;
     align-items: center;
     justify-content: center;
+    flex-shrink: 0;
 }
 
 .address-input {
@@ -232,6 +243,7 @@ body {
     color: var(--text-primary);
     outline: none;
     text-align: center;
+    letter-spacing: -0.01em;
 }
 
 .address-bar:focus-within .address-input {
@@ -240,5 +252,17 @@ body {
 
 .address-input::placeholder {
     color: var(--text-secondary);
+    opacity: 0.7;
 }
 
+#btn-add-bookmark {
+    width: 22px;
+    height: 22px;
+    opacity: 0.55;
+    padding: 0;
+}
+
+#btn-add-bookmark:hover {
+    opacity: 1;
+    color: var(--accent);
+}

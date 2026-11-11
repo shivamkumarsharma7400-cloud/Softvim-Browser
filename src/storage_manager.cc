@@ -8,6 +8,7 @@
 #include <fstream>
 #include <sstream>
 #include <chrono>
+#include <algorithm>
 
 StorageManager* StorageManager::instance_ = nullptr;
 
@@ -28,6 +29,19 @@ std::string EscapeJson(const std::string& s) {
 int64_t GetCurrentTimestamp() {
   return std::chrono::duration_cast<std::chrono::seconds>(
       std::chrono::system_clock::now().time_since_epoch()).count();
+}
+
+std::string ExtractJsonValue(const std::string& json, const std::string& key) {
+  std::string search = "\"" + key + "\":\"";
+  size_t pos = json.find(search);
+  if (pos != std::string::npos) {
+    pos += search.length();
+    size_t end = json.find("\"", pos);
+    if (end != std::string::npos) {
+      return json.substr(pos, end - pos);
+    }
+  }
+  return "";
 }
 
 }  // namespace
@@ -60,23 +74,53 @@ void StorageManager::Load() {
   std::lock_guard<std::mutex> lock(mutex_);
   std::ifstream file(GetStorageFilePath());
   if (!file.is_open()) {
-    // Populate default bookmarks
     bookmarks_.push_back({"1", "Google", "https://www.google.com", GetCurrentTimestamp()});
     bookmarks_.push_back({"2", "GitHub", "https://github.com", GetCurrentTimestamp()});
     bookmarks_.push_back({"3", "Softvim Solutions", "https://softvim.com", GetCurrentTimestamp()});
     return;
   }
-  // Parsing is kept minimal and robust
+
+  std::stringstream buffer;
+  buffer << file.rdbuf();
+  std::string content = buffer.str();
+
+  std::string engineName = ExtractJsonValue(content, "search_engine_name");
+  if (!engineName.empty()) {
+    settings_.search_engine_name = engineName;
+  }
+  std::string engineUrl = ExtractJsonValue(content, "search_engine");
+  if (!engineUrl.empty()) {
+    settings_.search_engine = engineUrl;
+  } else {
+    settings_.search_engine = "https://www.google.com/search?q=";
+  }
+
+  std::string theme = ExtractJsonValue(content, "theme");
+  if (!theme.empty()) {
+    settings_.theme = theme;
+  }
+  std::string homePage = ExtractJsonValue(content, "home_page");
+  if (!homePage.empty()) {
+    settings_.home_page = homePage;
+  }
+
+  // Populate default bookmarks if empty
+  if (bookmarks_.empty()) {
+    bookmarks_.push_back({"1", "Google", "https://www.google.com", GetCurrentTimestamp()});
+    bookmarks_.push_back({"2", "GitHub", "https://github.com", GetCurrentTimestamp()});
+    bookmarks_.push_back({"3", "Softvim Solutions", "https://softvim.com", GetCurrentTimestamp()});
+  }
 }
 
 void StorageManager::Save() {
-  // Persistence handler
   std::ofstream file(GetStorageFilePath());
   if (!file.is_open()) return;
 
   file << "{\n";
   file << "  \"theme\": \"" << settings_.theme << "\",\n";
-  file << "  \"home_page\": \"" << EscapeJson(settings_.home_page) << "\"\n";
+  file << "  \"home_page\": \"" << EscapeJson(settings_.home_page) << "\",\n";
+  file << "  \"search_engine_name\": \"" << settings_.search_engine_name << "\",\n";
+  file << "  \"search_engine\": \"" << EscapeJson(settings_.search_engine) << "\"\n";
   file << "}\n";
 }
 
@@ -119,13 +163,11 @@ void StorageManager::AddHistory(const std::string& title, const std::string& url
   std::lock_guard<std::mutex> lock(mutex_);
   std::string id = std::to_string(GetCurrentTimestamp()) + "_" + std::to_string(history_.size());
   history_.push_back({id, title.empty() ? url : title, url, GetCurrentTimestamp()});
-  Save();
 }
 
 void StorageManager::ClearHistory() {
   std::lock_guard<std::mutex> lock(mutex_);
   history_.clear();
-  Save();
 }
 
 std::vector<HistoryItem> StorageManager::GetHistory() {
@@ -164,6 +206,7 @@ std::string StorageManager::GetSettingsJson() {
   std::stringstream ss;
   ss << "{"
      << "\"search_engine\":\"" << EscapeJson(settings_.search_engine) << "\","
+     << "\"search_engine_name\":\"" << EscapeJson(settings_.search_engine_name) << "\","
      << "\"home_page\":\"" << EscapeJson(settings_.home_page) << "\","
      << "\"theme\":\"" << settings_.theme << "\","
      << "\"restore_session\":" << (settings_.restore_session ? "true" : "false")
@@ -206,4 +249,3 @@ std::string StorageManager::GetDownloadsJson() {
   ss << "]";
   return ss.str();
 }
-

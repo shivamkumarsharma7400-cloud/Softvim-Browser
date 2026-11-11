@@ -28,12 +28,13 @@ struct DownloadItem {
   std::string full_path;
   int64_t total_bytes;
   int64_t received_bytes;
-  std::string state; // "in_progress", "complete", "cancelled"
+  std::string state;
   int percent;
 };
 
 struct BrowserSettings {
   std::string search_engine = "https://www.google.com/search?q=";
+  std::string search_engine_name = "google"; // "google", "bing", "duckduckgo"
   std::string home_page = "https://www.google.com";
   std::string theme = "dark"; // "dark" or "light"
   bool restore_session = true;
@@ -84,4 +85,3 @@ class StorageManager {
 };
 
 #endif  // SOFTVIM_STORAGE_MANAGER_H_
-

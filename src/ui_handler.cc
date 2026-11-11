@@ -126,6 +126,30 @@ class UiQueryHandler : public CefMessageRouterBrowserSide::Handler {
     } else if (req.find("\"action\":\"get_downloads\"") != std::string::npos) {
       callback->Success(storage->GetDownloadsJson());
       return true;
+    } else if (req.find("\"action\":\"get_settings\"") != std::string::npos) {
+      callback->Success(storage->GetSettingsJson());
+      return true;
+    } else if (req.find("\"action\":\"update_settings\"") != std::string::npos) {
+      BrowserSettings cur = storage->GetSettings();
+      size_t namePos = req.find("\"search_engine_name\":\"");
+      if (namePos != std::string::npos) {
+        namePos += 22;
+        size_t nameEnd = req.find("\"", namePos);
+        if (nameEnd != std::string::npos) {
+          cur.search_engine_name = req.substr(namePos, nameEnd - namePos);
+        }
+      }
+      size_t engPos = req.find("\"search_engine\":\"");
+      if (engPos != std::string::npos) {
+        engPos += 17;
+        size_t engEnd = req.find("\"", engPos);
+        if (engEnd != std::string::npos) {
+          cur.search_engine = req.substr(engPos, engEnd - engPos);
+        }
+      }
+      storage->UpdateSettings(cur);
+      callback->Success("");
+      return true;
     }
 
     callback->Failure(1, "Unknown action");

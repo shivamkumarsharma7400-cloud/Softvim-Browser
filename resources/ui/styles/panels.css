@@ -1,14 +1,14 @@
-/* Softvim Browser — Safari-style Slide-out Sidebar & Modal Panels */
+/* Softvim Browser — Safari-style Slide-out Sidebar & Settings Panels */
 
 .sidebar-overlay {
     position: fixed;
-    top: var(--tabbar-height);
+    top: calc(var(--tabbar-height) + var(--toolbar-height) + 1px);
     bottom: 0;
     left: 0;
     width: 320px;
     background: var(--surface);
     border-right: 1px solid var(--border);
-    box-shadow: 4px 0 16px var(--shadow);
+    box-shadow: 4px 0 20px var(--shadow);
     transform: translateX(-100%);
     transition: transform var(--transition-normal);
     z-index: 200;
@@ -33,6 +33,7 @@
     font-size: var(--font-size-md);
     font-weight: var(--font-weight-semibold);
     color: var(--text-primary);
+    letter-spacing: -0.01em;
 }
 
 .sidebar-close {
@@ -45,6 +46,7 @@
     justify-content: center;
     padding: var(--space-1);
     border-radius: var(--radius-sm);
+    transition: background 120ms ease, color 120ms ease;
 }
 
 .sidebar-close:hover {
@@ -66,10 +68,10 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: var(--space-2) var(--space-3);
+    padding: 8px 12px;
     border-radius: var(--radius-md);
     cursor: pointer;
-    transition: background var(--transition-fast);
+    transition: background 120ms ease;
 }
 
 .panel-item:hover {
@@ -79,8 +81,9 @@
 .panel-item-left {
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 3px;
     overflow: hidden;
+    flex: 1;
 }
 
 .panel-item-title {
@@ -89,6 +92,7 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    font-weight: 500;
 }
 
 .panel-item-subtitle {
@@ -105,12 +109,13 @@
     border: none;
     color: var(--text-secondary);
     cursor: pointer;
-    padding: var(--space-1);
+    padding: 4px;
     border-radius: var(--radius-sm);
+    transition: opacity 120ms ease, color 120ms ease;
 }
 
 .panel-item:hover .panel-item-delete {
-    opacity: 0.7;
+    opacity: 0.6;
 }
 
 .panel-item-delete:hover {
@@ -118,3 +123,73 @@
     color: var(--danger);
 }
 
+/* ──────────────────────────────────────────── */
+/* Settings Panel Styling                       */
+/* ──────────────────────────────────────────── */
+
+.settings-section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    margin-bottom: var(--space-4);
+}
+
+.settings-section-title {
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-semibold);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-secondary);
+    padding: 0 var(--space-2);
+}
+
+.settings-card {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.settings-option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    cursor: pointer;
+    transition: background 120ms ease;
+    border-bottom: 1px solid var(--border);
+}
+
+.settings-option:last-child {
+    border-bottom: none;
+}
+
+.settings-option:hover {
+    background: var(--hover);
+}
+
+.settings-option-label {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.settings-option-name {
+    font-size: var(--font-size-base);
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.settings-option-desc {
+    font-size: var(--font-size-xs);
+    color: var(--text-secondary);
+}
+
+.settings-radio {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--accent);
+    cursor: pointer;
+}

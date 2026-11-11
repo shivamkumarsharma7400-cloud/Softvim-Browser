@@ -10,15 +10,15 @@
 </head>
 <body>
     <header class="browser-chrome">
-        <!-- Compact Safari Tab Bar -->
+        <!-- Compact Safari-Inspired Tab Bar -->
         <div class="tab-bar">
             <div class="tab active" data-tab-id="1">
                 <svg class="tab-favicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <circle cx="12" cy="12" r="10"></circle>
                     <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon>
                 </svg>
-                <span class="tab-title">New Tab</span>
-                <span class="tab-close">
+                <span class="tab-title">Google</span>
+                <span class="tab-close" title="Close Tab (Ctrl+W)">
                     <svg viewBox="0 0 24 24" width="10" height="10" stroke="currentColor" stroke-width="2.5" fill="none">
                         <line x1="18" y1="6" x2="6" y2="18"></line>
                         <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -26,7 +26,7 @@
                 </span>
             </div>
             <div class="new-tab-btn" title="New Tab (Ctrl+T)">
-                <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none">
+                <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2.2" fill="none">
                     <line x1="12" y1="5" x2="12" y2="19"></line>
                     <line x1="5" y1="12" x2="19" y2="12"></line>
                 </svg>
@@ -35,6 +35,7 @@
 
         <!-- Navigation & Safari Centered Address Bar -->
         <div class="nav-bar">
+            <!-- Navigation buttons -->
             <div class="nav-group">
                 <button class="action-btn" id="btn-back" title="Back (Alt+Left)" disabled>
                     <svg viewBox="0 0 24 24">
@@ -54,26 +55,26 @@
                 </button>
             </div>
 
-            <!-- Centered Rounded Address Field -->
+            <!-- Centered Rounded Address Field with Google Search -->
             <div class="address-bar-container">
-                <div class="address-bar">
-                    <span class="address-icon">
+                <div class="address-bar" id="address-bar-box">
+                    <span class="address-icon" id="search-engine-icon" title="Google Search">
                         <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2" fill="none">
-                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                         </svg>
                     </span>
-                    <input type="text" class="address-input" id="address-input" placeholder="Search or enter website name (Ctrl+L)" spellcheck="false" autocomplete="off" />
-                    <!-- Bookmark Action -->
-                    <button class="action-btn" id="btn-add-bookmark" title="Bookmark Page (Ctrl+D)" style="width:24px; height:24px;">
-                        <svg viewBox="0 0 24 24" width="14" height="14">
+                    <input type="text" class="address-input" id="address-input" placeholder="Search Google or enter URL" spellcheck="false" autocomplete="off" />
+                    <!-- Bookmark Page Action -->
+                    <button class="action-btn" id="btn-add-bookmark" title="Bookmark This Page (Ctrl+D)">
+                        <svg viewBox="0 0 24 24" width="13" height="13">
                             <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
                         </svg>
                     </button>
                 </div>
             </div>
 
-            <!-- Safari-Style Controls (Private Tab, Bookmarks, History, Downloads, Theme) -->
+            <!-- Secondary Controls -->
             <div class="nav-group">
                 <button class="action-btn" id="btn-private" title="New Private Tab (Ctrl+Shift+P)">
                     <svg viewBox="0 0 24 24">
@@ -91,11 +92,10 @@
                         <polyline points="12 6 12 12 16 14"></polyline>
                     </svg>
                 </button>
-                <button class="action-btn" id="btn-downloads" title="Downloads (Ctrl+J)">
+                <button class="action-btn" id="btn-settings" title="Settings (Search Engine & Appearance)">
                     <svg viewBox="0 0 24 24">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                        <polyline points="7 10 12 15 17 10"></polyline>
-                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
                     </svg>
                 </button>
                 <button class="action-btn" id="btn-theme" title="Toggle Appearance">
@@ -107,11 +107,11 @@
         </div>
     </header>
 
-    <!-- Slide-out Sidebar Panel -->
+    <!-- Slide-out Sidebar Panel (Bookmarks, History, Downloads, Settings) -->
     <aside class="sidebar-overlay" id="sidebar-panel">
         <div class="sidebar-header">
-            <span class="sidebar-title" id="sidebar-title">Bookmarks</span>
-            <button class="sidebar-close" id="sidebar-close">
+            <span class="sidebar-title" id="sidebar-title">Settings</span>
+            <button class="sidebar-close" id="sidebar-close" title="Close Panel (Esc)">
                 <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none">
                     <line x1="18" y1="6" x2="6" y2="18"></line>
                     <line x1="6" y1="6" x2="18" y2="18"></line>
