@@ -8,6 +8,7 @@
 
 #include "include/cef_app.h"
 #include "include/cef_browser.h"
+#include "include/internal/cef_types_wrappers.h"
 #include "resource_util.h"
 
 BrowserWindow* BrowserWindow::instance_ = nullptr;
@@ -162,8 +163,8 @@ void BrowserWindow::CreateBrowsers() {
 
   ui_handler_ = new UiHandler();
   CefWindowInfo uiWindowInfo;
-  RECT uiRect = {0, 0, width, kUiChromeHeight};
-  uiWindowInfo.SetAsChild(hwnd_, uiRect);
+  CefRect uiBounds(0, 0, width, kUiChromeHeight);
+  uiWindowInfo.SetAsChild(hwnd_, uiBounds);
 
   CefBrowserSettings uiSettings;
   uiSettings.background_color = CefColorSetARGB(255, 0x1C, 0x1C, 0x1E);

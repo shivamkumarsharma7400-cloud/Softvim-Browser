@@ -29,7 +29,6 @@ set(SOFTVIM_SOURCES
 set(SOFTVIM_HELPER_SOURCES
     subprocess_main.cc
     app.h
-    app.cc
 )
 
 # ──────────────────────────────────────────────

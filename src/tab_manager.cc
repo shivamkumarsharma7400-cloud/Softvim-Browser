@@ -3,6 +3,7 @@
 
 #include "tab_manager.h"
 #include <algorithm>
+#include "include/internal/cef_types_wrappers.h"
 
 TabManager::TabManager(HWND parent_hwnd, int top_offset)
     : parent_hwnd_(parent_hwnd), top_offset_(top_offset) {
@@ -31,8 +32,8 @@ int TabManager::CreateTab(const std::string& url, bool is_private) {
   int height = rect.bottom - rect.top;
 
   CefWindowInfo windowInfo;
-  RECT tabRect = {0, top_offset_, width, height};
-  windowInfo.SetAsChild(parent_hwnd_, tabRect);
+  CefRect tabBounds(0, top_offset_, width, height);
+  windowInfo.SetAsChild(parent_hwnd_, tabBounds);
 
   CefBrowserSettings settings;
   settings.background_color = is_private ? CefColorSetARGB(255, 0x1C, 0x1C, 0x1E) : CefColorSetARGB(255, 0xFF, 0xFF, 0xFF);
