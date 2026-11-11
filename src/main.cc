@@ -17,10 +17,6 @@ int APIENTRY wWinMain(HINSTANCE hInstance,
                       HINSTANCE hPrevInstance,
                       LPWSTR lpCmdLine,
                       int nCmdShow) {
-  // Enable High-DPI support (Windows 10/11).
-  // This ensures the browser renders sharply on high-resolution displays.
-  CefEnableHighDPISupport();
-
   // Provide CEF with command-line arguments.
   CefMainArgs main_args(hInstance);
 
