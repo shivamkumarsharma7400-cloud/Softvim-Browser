@@ -5,74 +5,77 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Softvim Browser</title>
     <link rel="stylesheet" href="styles/theme.css">
-    <style>
-        /* New Tab Page — Milestone 1 placeholder */
-        body {
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-            background: var(--bg);
-            color: var(--text-primary);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            -webkit-font-smoothing: antialiased;
-        }
-        .welcome {
-            text-align: center;
-            max-width: 400px;
-            padding: 2rem;
-        }
-        .logo {
-            width: 64px;
-            height: 64px;
-            margin: 0 auto 2rem;
-            border-radius: 16px;
-            background: linear-gradient(135deg, #007AFF, #5856D6);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .logo svg {
-            width: 36px;
-            height: 36px;
-            fill: white;
-        }
-        h1 {
-            font-size: 24px;
-            font-weight: 600;
-            margin: 0 0 0.5rem;
-            letter-spacing: -0.02em;
-        }
-        p {
-            font-size: 14px;
-            color: var(--text-secondary);
-            line-height: 1.6;
-            margin: 0;
-        }
-        .version {
-            margin-top: 2rem;
-            font-size: 11px;
-            color: var(--text-secondary);
-            opacity: 0.5;
-        }
-    </style>
+    <link rel="stylesheet" href="styles/toolbar.css">
 </head>
 <body>
-    <div class="welcome">
-        <div class="logo">
-            <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="10"/>
-                <line x1="12" y1="2" x2="12" y2="22"/>
-                <path d="M2 12h20"/>
-                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
-            </svg>
+    <header class="browser-chrome">
+        <!-- Compact Tab Bar -->
+        <div class="tab-bar">
+            <div class="tab active" data-tab-id="1">
+                <svg class="tab-favicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon>
+                </svg>
+                <span class="tab-title">New Tab</span>
+                <span class="tab-close">
+                    <svg viewBox="0 0 24 24" width="10" height="10" stroke="currentColor" stroke-width="2.5" fill="none">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </span>
+            </div>
+            <div class="new-tab-btn" title="New Tab">
+                <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+            </div>
         </div>
-        <h1>Softvim Browser</h1>
-        <p>A premium browsing experience.</p>
-        <div class="version">v0.1.0 — Pre-Alpha</div>
-    </div>
+
+        <!-- Navigation & Safari Centered Address Bar -->
+        <div class="nav-bar">
+            <div class="nav-group">
+                <button class="action-btn" id="btn-back" title="Back" disabled>
+                    <svg viewBox="0 0 24 24">
+                        <polyline points="15 18 9 12 15 6"></polyline>
+                    </svg>
+                </button>
+                <button class="action-btn" id="btn-forward" title="Forward" disabled>
+                    <svg viewBox="0 0 24 24">
+                        <polyline points="9 18 15 12 9 6"></polyline>
+                    </svg>
+                </button>
+                <button class="action-btn" id="btn-reload" title="Reload">
+                    <svg viewBox="0 0 24 24">
+                        <polyline points="23 4 23 10 17 10"></polyline>
+                        <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Centered Rounded Address Field -->
+            <div class="address-bar-container">
+                <div class="address-bar">
+                    <span class="address-icon">
+                        <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2" fill="none">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                        </svg>
+                    </span>
+                    <input type="text" class="address-input" id="address-input" placeholder="Search or enter website name" spellcheck="false" autocomplete="off" />
+                </div>
+            </div>
+
+            <div class="nav-group">
+                <button class="action-btn" id="btn-theme" title="Toggle Appearance">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <script src="scripts/app.js"></script>
 </body>
 </html>
-

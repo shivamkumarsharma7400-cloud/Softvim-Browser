@@ -1,0 +1,243 @@
+/* Softvim Browser — Toolbar and Navigation Styling
+ * Implements the Apple Safari-inspired top bar aesthetic.
+ */
+
+:root {
+    --toolbar-height: 48px;
+    --tabbar-height: 38px;
+}
+
+body {
+    background-color: var(--bg);
+    color: var(--text-primary);
+    user-select: none;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    margin: 0;
+    overflow: hidden;
+}
+
+/* Chrome container holding tabs and navigation bar */
+.browser-chrome {
+    display: flex;
+    flex-direction: column;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    z-index: 100;
+}
+
+/* ──────────────────────────────────────────── */
+/* Tab Bar                                      */
+/* ──────────────────────────────────────────── */
+
+.tab-bar {
+    height: var(--tabbar-height);
+    display: flex;
+    align-items: center;
+    padding: 0 var(--space-2);
+    gap: var(--space-1);
+    background: transparent;
+    overflow-x: auto;
+}
+
+.tab-bar::-webkit-scrollbar {
+    display: none;
+}
+
+.tab {
+    display: flex;
+    align-items: center;
+    height: 28px;
+    max-width: 220px;
+    min-width: 120px;
+    padding: 0 var(--space-2);
+    border-radius: var(--radius-md);
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    cursor: pointer;
+    transition: background var(--transition-fast), color var(--transition-fast);
+    position: relative;
+    gap: var(--space-2);
+}
+
+.tab:hover {
+    background: var(--hover);
+    color: var(--text-primary);
+}
+
+.tab.active {
+    background: var(--surface);
+    color: var(--text-primary);
+    box-shadow: 0 1px 3px var(--shadow);
+}
+
+.tab-favicon {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+    border-radius: 2px;
+}
+
+.tab-title {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.tab-close {
+    width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-sm);
+    opacity: 0;
+    transition: opacity var(--transition-fast), background var(--transition-fast);
+}
+
+.tab:hover .tab-close,
+.tab.active .tab-close {
+    opacity: 0.6;
+}
+
+.tab-close:hover {
+    opacity: 1 !important;
+    background: var(--hover);
+}
+
+.new-tab-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--text-secondary);
+    transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.new-tab-btn:hover {
+    background: var(--hover);
+    color: var(--text-primary);
+}
+
+/* ──────────────────────────────────────────── */
+/* Navigation Toolbar                           */
+/* ──────────────────────────────────────────── */
+
+.nav-bar {
+    height: var(--toolbar-height);
+    display: flex;
+    align-items: center;
+    padding: 0 var(--space-3);
+    gap: var(--space-2);
+}
+
+.nav-group {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+}
+
+.action-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: background var(--transition-fast), opacity var(--transition-fast);
+}
+
+.action-btn:hover:not(:disabled) {
+    background: var(--hover);
+}
+
+.action-btn:active:not(:disabled) {
+    background: var(--active);
+}
+
+.action-btn:disabled {
+    opacity: 0.25;
+    cursor: default;
+}
+
+.action-btn svg {
+    width: 16px;
+    height: 16px;
+    stroke: currentColor;
+    stroke-width: 1.75;
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+/* ──────────────────────────────────────────── */
+/* Safari Centered Address Bar                  */
+/* ──────────────────────────────────────────── */
+
+.address-bar-container {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    max-width: 700px;
+    margin: 0 auto;
+}
+
+.address-bar {
+    width: 100%;
+    height: 32px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    display: flex;
+    align-items: center;
+    padding: 0 var(--space-3);
+    gap: var(--space-2);
+    box-shadow: 0 1px 2px var(--shadow);
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.address-bar:focus-within {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.15);
+}
+
+.address-icon {
+    width: 14px;
+    height: 14px;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.address-input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    font-family: var(--font-family);
+    font-size: var(--font-size-base);
+    color: var(--text-primary);
+    outline: none;
+    text-align: center;
+}
+
+.address-bar:focus-within .address-input {
+    text-align: left;
+}
+
+.address-input::placeholder {
+    color: var(--text-secondary);
+}
