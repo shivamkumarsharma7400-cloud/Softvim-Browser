@@ -1,5 +1,5 @@
 // Copyright (c) 2024 Softvim Solutions. All rights reserved.
-// client_handler.cc — CefClient implementation.
+// client_handler.cc — Implementation of ClientHandler for tab browsers.
 
 #include "client_handler.h"
 #include "browser_window.h"
@@ -10,26 +10,18 @@
 
 #include "include/cef_app.h"
 #include "include/wrapper/cef_helpers.h"
+#include "resource_util.h"
 
 ClientHandler::ClientHandler() = default;
 
 void ClientHandler::OnTitleChange(CefRefPtr<CefBrowser> browser,
                                   const CefString& title) {
   CEF_REQUIRE_UI_THREAD();
-
-  // Update window title and UI chrome
   BrowserWindow* window = BrowserWindow::GetInstance();
-  if (window && window->GetHwnd()) {
-    std::wstring window_title = title.ToWString();
-    if (!window_title.empty()) {
-      window_title += L" \u2014 Softvim Browser";
-    } else {
-      window_title = L"Softvim Browser";
-    }
-    SetWindowTextW(window->GetHwnd(), window_title.c_str());
-
+  if (window) {
+    int browserId = browser->GetIdentifier();
     std::string currentUrl = browser->GetMainFrame() ? browser->GetMainFrame()->GetURL().ToString() : "";
-    window->NotifyNavigationState(currentUrl, title.ToString(), browser->CanGoBack(), browser->CanGoForward());
+    window->NotifyNavigationState(browserId, currentUrl, title.ToString(), browser->CanGoBack(), browser->CanGoForward());
   }
 }
 
@@ -37,60 +29,31 @@ void ClientHandler::OnAddressChange(CefRefPtr<CefBrowser> browser,
                                     CefRefPtr<CefFrame> frame,
                                     const CefString& url) {
   CEF_REQUIRE_UI_THREAD();
-
   if (frame->IsMain()) {
     BrowserWindow* window = BrowserWindow::GetInstance();
     if (window) {
-      // Fetch latest document title or empty string if not loaded yet
-      std::string currentTitle = "";
-      window->NotifyNavigationState(url.ToString(), currentTitle, browser->CanGoBack(), browser->CanGoForward());
+      int browserId = browser->GetIdentifier();
+      window->NotifyNavigationState(browserId, url.ToString(), "", browser->CanGoBack(), browser->CanGoForward());
     }
   }
 }
 
 void ClientHandler::OnAfterCreated(CefRefPtr<CefBrowser> browser) {
   CEF_REQUIRE_UI_THREAD();
-
   if (!browser_) {
-    // Keep a reference to the main browser.
     browser_ = browser;
   }
-  browser_count_++;
 }
 
 bool ClientHandler::DoClose(CefRefPtr<CefBrowser> browser) {
   CEF_REQUIRE_UI_THREAD();
-
-  // If this is the last browser, allow close and destroy the window.
-  if (browser_count_ == 1) {
-    // Set a flag so we know the window is closing.
-    // Allow the close to proceed.
-  }
-
-  // Allow the close. Return false to proceed with closing.
   return false;
 }
 
 void ClientHandler::OnBeforeClose(CefRefPtr<CefBrowser> browser) {
   CEF_REQUIRE_UI_THREAD();
-
   if (browser->IsSame(browser_)) {
-    // Our main browser is closing. Release the reference.
     browser_ = nullptr;
-  }
-
-  browser_count_--;
-
-  if (browser_count_ == 0) {
-    // All browsers are closed. Quit the message loop.
-    // This causes CefRunMessageLoop() in main.cc to return.
-    CefQuitMessageLoop();
-
-    // Destroy the native window
-    BrowserWindow* window = BrowserWindow::GetInstance();
-    if (window && window->GetHwnd()) {
-      DestroyWindow(window->GetHwnd());
-    }
   }
 }
 
@@ -100,13 +63,8 @@ void ClientHandler::OnLoadError(CefRefPtr<CefBrowser> browser,
                                 const CefString& errorText,
                                 const CefString& failedUrl) {
   CEF_REQUIRE_UI_THREAD();
+  if (errorCode == ERR_ABORTED) return;
 
-  // Don't display an error page for aborted navigations (e.g., download links)
-  if (errorCode == ERR_ABORTED) {
-    return;
-  }
-
-  // Show a minimal, clean error page styled to match our design.
   std::stringstream ss;
   ss << "<!DOCTYPE html>"
      << "<html><head>"
@@ -120,24 +78,11 @@ void ClientHandler::OnLoadError(CefRefPtr<CefBrowser> browser,
      << "    min-height: 100vh;"
      << "    padding: 2rem;"
      << "  }"
-     << "  .error-container {"
-     << "    text-align: center; max-width: 480px;"
-     << "  }"
-     << "  .error-icon {"
-     << "    font-size: 48px; margin-bottom: 1.5rem; opacity: 0.5;"
-     << "  }"
-     << "  h1 {"
-     << "    font-size: 20px; font-weight: 600;"
-     << "    margin-bottom: 0.75rem; color: #F5F5F7;"
-     << "  }"
-     << "  p {"
-     << "    font-size: 14px; color: #98989D;"
-     << "    line-height: 1.6;"
-     << "  }"
-     << "  .url {"
-     << "    font-size: 12px; color: #636366;"
-     << "    margin-top: 1.5rem; word-break: break-all;"
-     << "  }"
+     << "  .error-container { text-align: center; max-width: 480px; }"
+     << "  .error-icon { font-size: 48px; margin-bottom: 1.5rem; opacity: 0.5; }"
+     << "  h1 { font-size: 20px; font-weight: 600; margin-bottom: 0.75rem; color: #F5F5F7; }"
+     << "  p { font-size: 14px; color: #98989D; line-height: 1.6; }"
+     << "  .url { font-size: 12px; color: #636366; margin-top: 1.5rem; word-break: break-all; }"
      << "</style></head><body>"
      << "<div class=\"error-container\">"
      << "  <div class=\"error-icon\">\xe2\x9a\xa0</div>"
@@ -148,4 +93,3 @@ void ClientHandler::OnLoadError(CefRefPtr<CefBrowser> browser,
 
   frame->LoadURL(ResourceUtil::GetDataURI(ss.str(), "text/html"));
 }
-

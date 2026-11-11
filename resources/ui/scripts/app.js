@@ -1,9 +1,8 @@
 /**
  * Softvim Browser — UI Controller
- * Manages UI interactions and communicates with the C++ host application.
+ * Manages tabs, address bar, navigation, and IPC with the C++ host.
  */
 
-// Host communication wrapper
 const NativeHost = {
     navigate: function(url) {
         if (window.cefQuery) {
@@ -12,8 +11,6 @@ const NativeHost = {
                 onSuccess: function() {},
                 onFailure: function() {}
             });
-        } else {
-            console.log('[Softvim NativeHost] Navigate to:', url);
         }
     },
     goBack: function() {
@@ -23,8 +20,6 @@ const NativeHost = {
                 onSuccess: function() {},
                 onFailure: function() {}
             });
-        } else {
-            console.log('[Softvim NativeHost] Back');
         }
     },
     goForward: function() {
@@ -34,8 +29,6 @@ const NativeHost = {
                 onSuccess: function() {},
                 onFailure: function() {}
             });
-        } else {
-            console.log('[Softvim NativeHost] Forward');
         }
     },
     reload: function() {
@@ -45,8 +38,33 @@ const NativeHost = {
                 onSuccess: function() {},
                 onFailure: function() {}
             });
-        } else {
-            console.log('[Softvim NativeHost] Reload');
+        }
+    },
+    newTab: function() {
+        if (window.cefQuery) {
+            window.cefQuery({
+                request: JSON.stringify({ action: 'new_tab' }),
+                onSuccess: function() {},
+                onFailure: function() {}
+            });
+        }
+    },
+    switchTab: function(tabId) {
+        if (window.cefQuery) {
+            window.cefQuery({
+                request: JSON.stringify({ action: 'switch_tab', id: tabId }),
+                onSuccess: function() {},
+                onFailure: function() {}
+            });
+        }
+    },
+    closeTab: function(tabId) {
+        if (window.cefQuery) {
+            window.cefQuery({
+                request: JSON.stringify({ action: 'close_tab', id: tabId }),
+                onSuccess: function() {},
+                onFailure: function() {}
+            });
         }
     },
     toggleTheme: function() {
@@ -57,18 +75,19 @@ const NativeHost = {
     }
 };
 
-// UI Initialization
 document.addEventListener('DOMContentLoaded', () => {
     const addressInput = document.getElementById('address-input');
     const btnBack = document.getElementById('btn-back');
     const btnForward = document.getElementById('btn-forward');
     const btnReload = document.getElementById('btn-reload');
     const btnTheme = document.getElementById('btn-theme');
+    const btnNewTab = document.querySelector('.new-tab-btn');
 
     if (btnBack) btnBack.addEventListener('click', () => NativeHost.goBack());
     if (btnForward) btnForward.addEventListener('click', () => NativeHost.goForward());
     if (btnReload) btnReload.addEventListener('click', () => NativeHost.reload());
     if (btnTheme) btnTheme.addEventListener('click', () => NativeHost.toggleTheme());
+    if (btnNewTab) btnNewTab.addEventListener('click', () => NativeHost.newTab());
 
     if (addressInput) {
         addressInput.addEventListener('keydown', (e) => {
@@ -76,12 +95,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 let target = addressInput.value.trim();
                 if (!target) return;
 
-                // Simple URL detection
                 if (!target.startsWith('http://') && !target.startsWith('https://')) {
                     if (target.includes('.') && !target.includes(' ')) {
                         target = 'https://' + target;
                     } else {
-                        // Default search with Google
                         target = `https://www.google.com/search?q=${encodeURIComponent(target)}`;
                     }
                 }
@@ -90,33 +107,109 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        // Select all text on click for rapid typing
         addressInput.addEventListener('focus', () => {
             addressInput.select();
         });
     }
+
+    // Attach click listeners to existing tabs
+    bindTabEvents();
 });
 
-// Updates dispatched from C++ Host
+function bindTabEvents() {
+    document.querySelectorAll('.tab').forEach(tab => {
+        const tabId = parseInt(tab.getAttribute('data-tab-id'));
+        tab.onclick = (e) => {
+            if (e.target.closest('.tab-close')) {
+                e.stopPropagation();
+                NativeHost.closeTab(tabId);
+            } else {
+                NativeHost.switchTab(tabId);
+            }
+        };
+    });
+}
+
+// ──────────────────────────────────────────────
+// Host Callback Handlers
+// ──────────────────────────────────────────────
+
+window.onTabCreated = function(tabData) {
+    const tabBar = document.querySelector('.tab-bar');
+    const newTabBtn = document.querySelector('.new-tab-btn');
+
+    // Deselect current active tab
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+
+    const tabElem = document.createElement('div');
+    tabElem.className = 'tab active';
+    tabElem.setAttribute('data-tab-id', tabData.id);
+    tabElem.innerHTML = `
+        <svg class="tab-favicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon>
+        </svg>
+        <span class="tab-title">${tabData.title || 'New Tab'}</span>
+        <span class="tab-close">
+            <svg viewBox="0 0 24 24" width="10" height="10" stroke="currentColor" stroke-width="2.5" fill="none">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+        </span>
+    `;
+
+    tabBar.insertBefore(tabElem, newTabBtn);
+    bindTabEvents();
+};
+
+window.onTabClosed = function(closedId, newActiveId) {
+    const tabToClose = document.querySelector(`.tab[data-tab-id="${closedId}"]`);
+    if (tabToClose) tabToClose.remove();
+
+    if (newActiveId !== -1) {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        const newActive = document.querySelector(`.tab[data-tab-id="${newActiveId}"]`);
+        if (newActive) newActive.classList.add('active');
+    }
+};
+
+window.onTabSwitched = function(state) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    const targetTab = document.querySelector(`.tab[data-tab-id="${state.id}"]`);
+    if (targetTab) targetTab.classList.add('active');
+
+    const addressInput = document.getElementById('address-input');
+    if (addressInput) addressInput.value = state.url;
+
+    const btnBack = document.getElementById('btn-back');
+    const btnForward = document.getElementById('btn-forward');
+    if (btnBack) btnBack.disabled = !state.canGoBack;
+    if (btnForward) btnForward.disabled = !state.canGoForward;
+};
+
 window.updateBrowserState = function(state) {
-    if (state.url) {
-        const addressInput = document.getElementById('address-input');
-        if (addressInput && document.activeElement !== addressInput) {
-            addressInput.value = state.url;
+    const activeTab = document.querySelector('.tab.active');
+    if (activeTab) {
+        const activeId = parseInt(activeTab.getAttribute('data-tab-id'));
+        if (state.tabId === activeId) {
+            if (state.url) {
+                const addressInput = document.getElementById('address-input');
+                if (addressInput && document.activeElement !== addressInput) {
+                    addressInput.value = state.url;
+                }
+            }
+            if (state.title) {
+                const titleSpan = activeTab.querySelector('.tab-title');
+                if (titleSpan) titleSpan.textContent = state.title;
+            }
+            if (typeof state.canGoBack !== 'undefined') {
+                const btnBack = document.getElementById('btn-back');
+                if (btnBack) btnBack.disabled = !state.canGoBack;
+            }
+            if (typeof state.canGoForward !== 'undefined') {
+                const btnForward = document.getElementById('btn-forward');
+                if (btnForward) btnForward.disabled = !state.canGoForward;
+            }
         }
-    }
-    if (state.title) {
-        const activeTabTitle = document.querySelector('.tab.active .tab-title');
-        if (activeTabTitle) {
-            activeTabTitle.textContent = state.title;
-        }
-    }
-    if (typeof state.canGoBack !== 'undefined') {
-        const btnBack = document.getElementById('btn-back');
-        if (btnBack) btnBack.disabled = !state.canGoBack;
-    }
-    if (typeof state.canGoForward !== 'undefined') {
-        const btnForward = document.getElementById('btn-forward');
-        if (btnForward) btnForward.disabled = !state.canGoForward;
     }
 };

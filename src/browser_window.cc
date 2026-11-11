@@ -1,9 +1,10 @@
 // Copyright (c) 2024 Softvim Solutions. All rights reserved.
-// browser_window.cc — Implementation of dual-view browser window.
+// browser_window.cc — Multi-tab browser window implementation.
 
 #include "browser_window.h"
 
 #include <dwmapi.h>
+#include <algorithm>
 
 #include "include/cef_app.h"
 #include "include/cef_browser.h"
@@ -33,48 +34,71 @@ BrowserWindow* BrowserWindow::GetInstance() {
   return instance_;
 }
 
-CefRefPtr<CefBrowser> BrowserWindow::GetContentBrowser() const {
-  return content_handler_ ? content_handler_->GetBrowser() : nullptr;
-}
-
 CefRefPtr<CefBrowser> BrowserWindow::GetUiBrowser() const {
   return ui_handler_ ? ui_handler_->GetBrowser() : nullptr;
 }
 
-void BrowserWindow::NavigateContent(const std::string& url) {
-  CefRefPtr<CefBrowser> browser = GetContentBrowser();
-  if (browser && browser->GetMainFrame()) {
-    browser->GetMainFrame()->LoadURL(url);
+int BrowserWindow::CreateTab(const std::string& url) {
+  if (tab_manager_) {
+    int tab_id = tab_manager_->CreateTab(url);
+    if (ui_handler_) {
+      ui_handler_->OnTabCreated(tab_id, "New Tab", url);
+    }
+    return tab_id;
   }
+  return -1;
 }
 
-void BrowserWindow::GoBackContent() {
-  CefRefPtr<CefBrowser> browser = GetContentBrowser();
-  if (browser && browser->CanGoBack()) {
-    browser->GoBack();
+bool BrowserWindow::CloseTab(int tab_id) {
+  if (tab_manager_) {
+    bool ok = tab_manager_->CloseTab(tab_id);
+    if (ok && ui_handler_) {
+      ui_handler_->OnTabClosed(tab_id, tab_manager_->GetActiveTabId());
+    }
+    return ok;
   }
+  return false;
 }
 
-void BrowserWindow::GoForwardContent() {
-  CefRefPtr<CefBrowser> browser = GetContentBrowser();
-  if (browser && browser->CanGoForward()) {
-    browser->GoForward();
+bool BrowserWindow::SwitchToTab(int tab_id) {
+  if (tab_manager_) {
+    bool ok = tab_manager_->SwitchToTab(tab_id);
+    if (ok && ui_handler_) {
+      TabInfo* tab = tab_manager_->GetTab(tab_id);
+      if (tab) {
+        bool canGoBack = tab->browser ? tab->browser->CanGoBack() : false;
+        bool canGoForward = tab->browser ? tab->browser->CanGoForward() : false;
+        ui_handler_->OnTabSwitched(tab_id, tab->url, tab->title, canGoBack, canGoForward);
+      }
+    }
+    return ok;
   }
+  return false;
 }
 
-void BrowserWindow::ReloadContent() {
-  CefRefPtr<CefBrowser> browser = GetContentBrowser();
-  if (browser) {
-    browser->Reload();
-  }
+void BrowserWindow::NavigateActiveTab(const std::string& url) {
+  if (tab_manager_) tab_manager_->NavigateActiveTab(url);
 }
 
-void BrowserWindow::NotifyNavigationState(const std::string& url,
+void BrowserWindow::GoBackActiveTab() {
+  if (tab_manager_) tab_manager_->GoBackActiveTab();
+}
+
+void BrowserWindow::GoForwardActiveTab() {
+  if (tab_manager_) tab_manager_->GoForwardActiveTab();
+}
+
+void BrowserWindow::ReloadActiveTab() {
+  if (tab_manager_) tab_manager_->ReloadActiveTab();
+}
+
+void BrowserWindow::NotifyNavigationState(int tab_id,
+                                          const std::string& url,
                                           const std::string& title,
                                           bool canGoBack,
                                           bool canGoForward) {
   if (ui_handler_) {
-    ui_handler_->UpdateBrowserState(url, title, canGoBack, canGoForward);
+    ui_handler_->UpdateBrowserState(tab_id, url, title, canGoBack, canGoForward);
   }
 }
 
@@ -135,7 +159,6 @@ void BrowserWindow::CreateBrowsers() {
   RECT rect;
   GetClientRect(hwnd_, &rect);
   int width = rect.right - rect.left;
-  int height = rect.bottom - rect.top;
 
   // 1. Create UI Chrome Browser View (Top docking)
   ui_handler_ = new UiHandler();
@@ -147,7 +170,6 @@ void BrowserWindow::CreateBrowsers() {
   uiSettings.background_color = CefColorSetARGB(255, 0x1C, 0x1C, 0x1E);
 
   std::string uiUrl = "file:///" + ResourceUtil::GetUIResourcePath("ui\\index.html");
-  // Replace backslashes with forward slashes for valid URL
   for (char& c : uiUrl) {
     if (c == '\\') c = '/';
   }
@@ -161,25 +183,9 @@ void BrowserWindow::CreateBrowsers() {
       nullptr
   );
 
-  // 2. Create Content Browser View (Remaining window space)
-  content_handler_ = new ClientHandler();
-  CefWindowInfo contentWindowInfo;
-  RECT contentRect = {0, kUiChromeHeight, width, height};
-  contentWindowInfo.SetAsChild(hwnd_, contentRect);
-
-  CefBrowserSettings contentSettings;
-  contentSettings.background_color = CefColorSetARGB(255, 0xFF, 0xFF, 0xFF);
-
-  std::string startUrl = "https://www.google.com";
-
-  CefBrowserHost::CreateBrowser(
-      contentWindowInfo,
-      content_handler_,
-      startUrl,
-      contentSettings,
-      nullptr,
-      nullptr
-  );
+  // 2. Initialize TabManager & create first tab
+  tab_manager_ = std::make_unique<TabManager>(hwnd_, kUiChromeHeight);
+  tab_manager_->CreateTab("https://www.google.com");
 }
 
 LRESULT CALLBACK BrowserWindow::WndProc(
@@ -229,22 +235,13 @@ void BrowserWindow::OnSize() {
     }
   }
 
-  // Resize Content View
-  if (content_handler_ && content_handler_->GetBrowser()) {
-    HWND contentHwnd = content_handler_->GetBrowser()->GetHost()->GetWindowHandle();
-    if (contentHwnd) {
-      SetWindowPos(contentHwnd, nullptr,
-                   0, kUiChromeHeight,
-                   width, max(0, height - kUiChromeHeight),
-                   SWP_NOZORDER);
-    }
+  // Resize Active Content View
+  if (tab_manager_) {
+    tab_manager_->ResizeActiveTab(width, height);
   }
 }
 
 void BrowserWindow::OnClose() {
-  if (content_handler_ && content_handler_->GetBrowser()) {
-    content_handler_->GetBrowser()->GetHost()->CloseBrowser(false);
-  }
   if (ui_handler_ && ui_handler_->GetBrowser()) {
     ui_handler_->GetBrowser()->GetHost()->CloseBrowser(false);
   }

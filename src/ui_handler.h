@@ -22,20 +22,21 @@ class UiHandler : public CefClient,
                                 CefProcessId source_process,
                                 CefRefPtr<CefProcessMessage> message) override;
 
-  // CefLifeSpanHandler methods
   void OnAfterCreated(CefRefPtr<CefBrowser> browser) override;
   void OnBeforeClose(CefRefPtr<CefBrowser> browser) override;
-
-  // CefLoadHandler methods
   void OnLoadEnd(CefRefPtr<CefBrowser> browser,
                  CefRefPtr<CefFrame> frame,
                  int httpStatusCode) override;
 
-  // Helper to send state updates (url, title, nav buttons) to JavaScript UI
-  void UpdateBrowserState(const std::string& url,
+  // IPC updates to UI JavaScript layer
+  void UpdateBrowserState(int tab_id,
+                          const std::string& url,
                           const std::string& title,
                           bool canGoBack,
                           bool canGoForward);
+  void OnTabCreated(int tab_id, const std::string& title, const std::string& url);
+  void OnTabClosed(int closed_id, int new_active_id);
+  void OnTabSwitched(int tab_id, const std::string& url, const std::string& title, bool canGoBack, bool canGoForward);
 
   CefRefPtr<CefBrowser> GetBrowser() const { return browser_; }
 

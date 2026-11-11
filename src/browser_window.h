@@ -1,5 +1,5 @@
 // Copyright (c) 2024 Softvim Solutions. All rights reserved.
-// browser_window.h — Main browser window with dual-view architecture.
+// browser_window.h — Main browser window with multi-tab architecture.
 
 #ifndef SOFTVIM_BROWSER_WINDOW_H_
 #define SOFTVIM_BROWSER_WINDOW_H_
@@ -8,7 +8,7 @@
 #include <string>
 
 #include "include/cef_browser.h"
-#include "client_handler.h"
+#include "tab_manager.h"
 #include "ui_handler.h"
 
 class BrowserWindow {
@@ -18,17 +18,22 @@ class BrowserWindow {
 
   HWND GetHwnd() const { return hwnd_; }
 
-  CefRefPtr<CefBrowser> GetContentBrowser() const;
   CefRefPtr<CefBrowser> GetUiBrowser() const;
 
-  // Actions invoked from UI Chrome
-  void NavigateContent(const std::string& url);
-  void GoBackContent();
-  void GoForwardContent();
-  void ReloadContent();
+  // Tab management actions invoked from UI
+  int CreateTab(const std::string& url = "https://www.google.com");
+  bool CloseTab(int tab_id);
+  bool SwitchToTab(int tab_id);
 
-  // Called by Content ClientHandler to sync with UI Chrome
-  void NotifyNavigationState(const std::string& url,
+  // Navigation actions on active tab
+  void NavigateActiveTab(const std::string& url);
+  void GoBackActiveTab();
+  void GoForwardActiveTab();
+  void ReloadActiveTab();
+
+  // Navigation state synchronization
+  void NotifyNavigationState(int tab_id,
+                             const std::string& url,
                              const std::string& title,
                              bool canGoBack,
                              bool canGoForward);
@@ -48,7 +53,7 @@ class BrowserWindow {
 
   HWND hwnd_ = nullptr;
   CefRefPtr<UiHandler> ui_handler_;
-  CefRefPtr<ClientHandler> content_handler_;
+  std::unique_ptr<TabManager> tab_manager_;
 
   static BrowserWindow* instance_;
 
@@ -57,7 +62,7 @@ class BrowserWindow {
 
   static const int kDefaultWidth = 1280;
   static const int kDefaultHeight = 850;
-  static const int kUiChromeHeight = 86; // Height for Tab bar (38px) + Toolbar (48px)
+  static const int kUiChromeHeight = 86;
 };
 
 #endif  // SOFTVIM_BROWSER_WINDOW_H_
