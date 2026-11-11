@@ -1,5 +1,5 @@
 // Copyright (c) 2024 Softvim Solutions. All rights reserved.
-// browser_window.cc — Main browser window implementation.
+// browser_window.cc — Implementation of dual-view browser window.
 
 #include "browser_window.h"
 
@@ -9,7 +9,6 @@
 #include "include/cef_browser.h"
 #include "resource_util.h"
 
-// Static members
 BrowserWindow* BrowserWindow::instance_ = nullptr;
 const wchar_t BrowserWindow::kWindowClass[] = L"SoftvimBrowserWindow";
 const wchar_t BrowserWindow::kWindowTitle[] = L"Softvim Browser";
@@ -17,48 +16,78 @@ const wchar_t BrowserWindow::kWindowTitle[] = L"Softvim Browser";
 BrowserWindow::BrowserWindow() = default;
 BrowserWindow::~BrowserWindow() = default;
 
-// static
 void BrowserWindow::Create() {
-  if (instance_) {
-    return;  // Already created
-  }
+  if (instance_) return;
 
   instance_ = new BrowserWindow();
-
   if (!instance_->CreateNativeWindow()) {
     delete instance_;
     instance_ = nullptr;
     return;
   }
 
-  instance_->CreateBrowser();
+  instance_->CreateBrowsers();
 }
 
-// static
 BrowserWindow* BrowserWindow::GetInstance() {
   return instance_;
 }
 
-CefRefPtr<CefBrowser> BrowserWindow::GetBrowser() const {
-  if (client_handler_) {
-    return client_handler_->GetBrowser();
+CefRefPtr<CefBrowser> BrowserWindow::GetContentBrowser() const {
+  return content_handler_ ? content_handler_->GetBrowser() : nullptr;
+}
+
+CefRefPtr<CefBrowser> BrowserWindow::GetUiBrowser() const {
+  return ui_handler_ ? ui_handler_->GetBrowser() : nullptr;
+}
+
+void BrowserWindow::NavigateContent(const std::string& url) {
+  CefRefPtr<CefBrowser> browser = GetContentBrowser();
+  if (browser && browser->GetMainFrame()) {
+    browser->GetMainFrame()->LoadURL(url);
   }
-  return nullptr;
+}
+
+void BrowserWindow::GoBackContent() {
+  CefRefPtr<CefBrowser> browser = GetContentBrowser();
+  if (browser && browser->CanGoBack()) {
+    browser->GoBack();
+  }
+}
+
+void BrowserWindow::GoForwardContent() {
+  CefRefPtr<CefBrowser> browser = GetContentBrowser();
+  if (browser && browser->CanGoForward()) {
+    browser->GoForward();
+  }
+}
+
+void BrowserWindow::ReloadContent() {
+  CefRefPtr<CefBrowser> browser = GetContentBrowser();
+  if (browser) {
+    browser->Reload();
+  }
+}
+
+void BrowserWindow::NotifyNavigationState(const std::string& url,
+                                          const std::string& title,
+                                          bool canGoBack,
+                                          bool canGoForward) {
+  if (ui_handler_) {
+    ui_handler_->UpdateBrowserState(url, title, canGoBack, canGoForward);
+  }
 }
 
 bool BrowserWindow::CreateNativeWindow() {
-  // Register window class
   WNDCLASSEXW wcex = {};
   wcex.cbSize = sizeof(WNDCLASSEXW);
   wcex.style = CS_HREDRAW | CS_VREDRAW;
   wcex.lpfnWndProc = WndProc;
   wcex.hInstance = GetModuleHandle(nullptr);
   wcex.hCursor = LoadCursor(nullptr, IDC_ARROW);
-  // Use a dark background brush to avoid white flash on startup
   wcex.hbrBackground = CreateSolidBrush(RGB(0x1C, 0x1C, 0x1E));
   wcex.lpszClassName = kWindowClass;
 
-  // Load our application icon from resources, fall back to default
   wcex.hIcon = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(101));
   if (!wcex.hIcon) {
     wcex.hIcon = LoadIcon(nullptr, IDI_APPLICATION);
@@ -69,34 +98,31 @@ bool BrowserWindow::CreateNativeWindow() {
     return false;
   }
 
-  // Calculate centered window position
   int screenWidth = GetSystemMetrics(SM_CXSCREEN);
   int screenHeight = GetSystemMetrics(SM_CYSCREEN);
   int x = (screenWidth - kDefaultWidth) / 2;
   int y = (screenHeight - kDefaultHeight) / 2;
 
-  // Create the window
   hwnd_ = CreateWindowExW(
-      0,                    // Extended style
-      kWindowClass,         // Window class
-      kWindowTitle,         // Title
-      WS_OVERLAPPEDWINDOW,  // Standard window with all controls
-      x, y,                 // Position (centered)
-      kDefaultWidth,        // Width
-      kDefaultHeight,       // Height
-      nullptr,              // Parent
-      nullptr,              // Menu
+      0,
+      kWindowClass,
+      kWindowTitle,
+      WS_OVERLAPPEDWINDOW,
+      x, y,
+      kDefaultWidth,
+      kDefaultHeight,
+      nullptr,
+      nullptr,
       GetModuleHandle(nullptr),
-      nullptr               // Additional data
+      nullptr
   );
 
   if (!hwnd_) {
     return false;
   }
 
-  // Enable dark mode title bar on Windows 10/11
+  // Windows 11/10 Dark Title Bar
   BOOL useDarkMode = TRUE;
-  // DWMWA_USE_IMMERSIVE_DARK_MODE = 20
   DwmSetWindowAttribute(hwnd_, 20, &useDarkMode, sizeof(useDarkMode));
 
   ShowWindow(hwnd_, SW_SHOW);
@@ -105,40 +131,59 @@ bool BrowserWindow::CreateNativeWindow() {
   return true;
 }
 
-void BrowserWindow::CreateBrowser() {
-  // Set up the browser to fill the entire client area
-  CefWindowInfo window_info;
+void BrowserWindow::CreateBrowsers() {
   RECT rect;
   GetClientRect(hwnd_, &rect);
-  window_info.SetAsChild(hwnd_, rect);
+  int width = rect.right - rect.left;
+  int height = rect.bottom - rect.top;
 
-  // Browser settings — mostly defaults for now
-  CefBrowserSettings browser_settings;
-  browser_settings.background_color = CefColorSetARGB(255, 0x1C, 0x1C, 0x1E);
+  // 1. Create UI Chrome Browser View (Top docking)
+  ui_handler_ = new UiHandler();
+  CefWindowInfo uiWindowInfo;
+  RECT uiRect = {0, 0, width, kUiChromeHeight};
+  uiWindowInfo.SetAsChild(hwnd_, uiRect);
 
-  // Create the client handler
-  client_handler_ = new ClientHandler();
+  CefBrowserSettings uiSettings;
+  uiSettings.background_color = CefColorSetARGB(255, 0x1C, 0x1C, 0x1E);
 
-  // Navigate to the start page
-  // For Milestone 1, we open a simple welcome page.
-  // Later, this will be our custom new-tab page.
-  std::string start_url = "https://www.google.com";
+  std::string uiUrl = "file:///" + ResourceUtil::GetUIResourcePath("ui\\index.html");
+  // Replace backslashes with forward slashes for valid URL
+  for (char& c : uiUrl) {
+    if (c == '\\') c = '/';
+  }
 
-  // Create the browser
   CefBrowserHost::CreateBrowser(
-      window_info,
-      client_handler_,
-      start_url,
-      browser_settings,
-      nullptr,  // extra_info
-      nullptr   // request_context
+      uiWindowInfo,
+      ui_handler_,
+      uiUrl,
+      uiSettings,
+      nullptr,
+      nullptr
+  );
+
+  // 2. Create Content Browser View (Remaining window space)
+  content_handler_ = new ClientHandler();
+  CefWindowInfo contentWindowInfo;
+  RECT contentRect = {0, kUiChromeHeight, width, height};
+  contentWindowInfo.SetAsChild(hwnd_, contentRect);
+
+  CefBrowserSettings contentSettings;
+  contentSettings.background_color = CefColorSetARGB(255, 0xFF, 0xFF, 0xFF);
+
+  std::string startUrl = "https://www.google.com";
+
+  CefBrowserHost::CreateBrowser(
+      contentWindowInfo,
+      content_handler_,
+      startUrl,
+      contentSettings,
+      nullptr,
+      nullptr
   );
 }
 
-// static
 LRESULT CALLBACK BrowserWindow::WndProc(
     HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) {
-
   BrowserWindow* window = GetInstance();
 
   switch (message) {
@@ -158,7 +203,6 @@ LRESULT CALLBACK BrowserWindow::WndProc(
       PostQuitMessage(0);
       return 0;
 
-    // Handle erase background to prevent flicker
     case WM_ERASEBKGND:
       return 1;
 
@@ -170,40 +214,39 @@ LRESULT CALLBACK BrowserWindow::WndProc(
 }
 
 void BrowserWindow::OnSize() {
-  if (!hwnd_ || !client_handler_) {
-    return;
-  }
+  if (!hwnd_) return;
 
-  CefRefPtr<CefBrowser> browser = client_handler_->GetBrowser();
-  if (!browser) {
-    return;
-  }
-
-  // Resize the browser to fill the entire client area
   RECT rect;
   GetClientRect(hwnd_, &rect);
+  int width = rect.right - rect.left;
+  int height = rect.bottom - rect.top;
 
-  HWND browser_hwnd = browser->GetHost()->GetWindowHandle();
-  if (browser_hwnd) {
-    SetWindowPos(browser_hwnd, nullptr,
-                 rect.left, rect.top,
-                 rect.right - rect.left,
-                 rect.bottom - rect.top,
-                 SWP_NOZORDER);
+  // Resize UI Chrome View
+  if (ui_handler_ && ui_handler_->GetBrowser()) {
+    HWND uiHwnd = ui_handler_->GetBrowser()->GetHost()->GetWindowHandle();
+    if (uiHwnd) {
+      SetWindowPos(uiHwnd, nullptr, 0, 0, width, kUiChromeHeight, SWP_NOZORDER);
+    }
+  }
+
+  // Resize Content View
+  if (content_handler_ && content_handler_->GetBrowser()) {
+    HWND contentHwnd = content_handler_->GetBrowser()->GetHost()->GetWindowHandle();
+    if (contentHwnd) {
+      SetWindowPos(contentHwnd, nullptr,
+                   0, kUiChromeHeight,
+                   width, max(0, height - kUiChromeHeight),
+                   SWP_NOZORDER);
+    }
   }
 }
 
 void BrowserWindow::OnClose() {
-  if (client_handler_) {
-    CefRefPtr<CefBrowser> browser = client_handler_->GetBrowser();
-    if (browser) {
-      // Request the browser to close. This triggers the CefLifeSpanHandler
-      // callbacks which will handle cleanup.
-      browser->GetHost()->CloseBrowser(false);
-      return;  // Don't destroy the window yet — wait for browser to close
-    }
+  if (content_handler_ && content_handler_->GetBrowser()) {
+    content_handler_->GetBrowser()->GetHost()->CloseBrowser(false);
   }
-
+  if (ui_handler_ && ui_handler_->GetBrowser()) {
+    ui_handler_->GetBrowser()->GetHost()->CloseBrowser(false);
+  }
   DestroyWindow(hwnd_);
 }
-

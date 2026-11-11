@@ -16,6 +16,8 @@ set(SOFTVIM_SOURCES
     browser_window.cc
     client_handler.h
     client_handler.cc
+    ui_handler.h
+    ui_handler.cc
     resource_util.h
     resource_util.cc
 )

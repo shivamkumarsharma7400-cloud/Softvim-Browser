@@ -17,10 +17,9 @@ void ClientHandler::OnTitleChange(CefRefPtr<CefBrowser> browser,
                                   const CefString& title) {
   CEF_REQUIRE_UI_THREAD();
 
-  // Update the window title to show the page title
+  // Update window title and UI chrome
   BrowserWindow* window = BrowserWindow::GetInstance();
   if (window && window->GetHwnd()) {
-    // Format: "Page Title — Softvim Browser"
     std::wstring window_title = title.ToWString();
     if (!window_title.empty()) {
       window_title += L" \u2014 Softvim Browser";
@@ -28,6 +27,9 @@ void ClientHandler::OnTitleChange(CefRefPtr<CefBrowser> browser,
       window_title = L"Softvim Browser";
     }
     SetWindowTextW(window->GetHwnd(), window_title.c_str());
+
+    std::string currentUrl = browser->GetMainFrame() ? browser->GetMainFrame()->GetURL().ToString() : "";
+    window->NotifyNavigationState(currentUrl, title.ToString(), browser->CanGoBack(), browser->CanGoForward());
   }
 }
 
@@ -36,10 +38,13 @@ void ClientHandler::OnAddressChange(CefRefPtr<CefBrowser> browser,
                                     const CefString& url) {
   CEF_REQUIRE_UI_THREAD();
 
-  // For Milestone 1, we only track the main frame URL.
-  // In Milestone 2, this will update the address bar UI.
   if (frame->IsMain()) {
-    // URL tracking will be used by the UI chrome in later milestones.
+    BrowserWindow* window = BrowserWindow::GetInstance();
+    if (window) {
+      // Fetch latest document title or empty string if not loaded yet
+      std::string currentTitle = "";
+      window->NotifyNavigationState(url.ToString(), currentTitle, browser->CanGoBack(), browser->CanGoForward());
+    }
   }
 }
 
