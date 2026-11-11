@@ -1,15 +1,15 @@
 // Copyright (c) 2024 Softvim Solutions. All rights reserved.
-// ui_handler.cc — Implementation of UiHandler.
+// ui_handler.cc — Implementation of UiHandler with Storage & Panels IPC.
 
 #include "ui_handler.h"
 #include "browser_window.h"
+#include "storage_manager.h"
 
 #include <sstream>
 #include "include/wrapper/cef_helpers.h"
 
 namespace {
 
-// Escapes special characters for dynamic JavaScript strings
 std::string EscapeJsonString(const std::string& str) {
   std::string res;
   for (char c : str) {
@@ -32,7 +32,8 @@ class UiQueryHandler : public CefMessageRouterBrowserSide::Handler {
                CefRefPtr<Callback> callback) override {
     std::string req = request.ToString();
     BrowserWindow* window = BrowserWindow::GetInstance();
-    if (!window) return false;
+    StorageManager* storage = StorageManager::GetInstance();
+    if (!window || !storage) return false;
 
     // Navigation Actions
     if (req.find("\"action\":\"navigate\"") != std::string::npos) {
@@ -82,6 +83,48 @@ class UiQueryHandler : public CefMessageRouterBrowserSide::Handler {
         callback->Success("");
         return true;
       }
+    }
+
+    // Milestone 4: Bookmarks, History, Downloads Actions
+    else if (req.find("\"action\":\"get_bookmarks\"") != std::string::npos) {
+      callback->Success(storage->GetBookmarksJson());
+      return true;
+    } else if (req.find("\"action\":\"add_bookmark\"") != std::string::npos) {
+      size_t titlePos = req.find("\"title\":\"");
+      size_t urlPos = req.find("\"url\":\"");
+      if (titlePos != std::string::npos && urlPos != std::string::npos) {
+        titlePos += 9;
+        size_t titleEnd = req.find("\"", titlePos);
+        urlPos += 7;
+        size_t urlEnd = req.find("\"", urlPos);
+        if (titleEnd != std::string::npos && urlEnd != std::string::npos) {
+          storage->AddBookmark(req.substr(titlePos, titleEnd - titlePos),
+                               req.substr(urlPos, urlEnd - urlPos));
+          callback->Success("");
+          return true;
+        }
+      }
+    } else if (req.find("\"action\":\"delete_bookmark\"") != std::string::npos) {
+      size_t idPos = req.find("\"id\":\"");
+      if (idPos != std::string::npos) {
+        idPos += 6;
+        size_t idEnd = req.find("\"", idPos);
+        if (idEnd != std::string::npos) {
+          storage->RemoveBookmark(req.substr(idPos, idEnd - idPos));
+          callback->Success("");
+          return true;
+        }
+      }
+    } else if (req.find("\"action\":\"get_history\"") != std::string::npos) {
+      callback->Success(storage->GetHistoryJson());
+      return true;
+    } else if (req.find("\"action\":\"clear_history\"") != std::string::npos) {
+      storage->ClearHistory();
+      callback->Success("");
+      return true;
+    } else if (req.find("\"action\":\"get_downloads\"") != std::string::npos) {
+      callback->Success(storage->GetDownloadsJson());
+      return true;
     }
 
     callback->Failure(1, "Unknown action");

@@ -6,10 +6,11 @@
     <title>Softvim Browser</title>
     <link rel="stylesheet" href="styles/theme.css">
     <link rel="stylesheet" href="styles/toolbar.css">
+    <link rel="stylesheet" href="styles/panels.css">
 </head>
 <body>
     <header class="browser-chrome">
-        <!-- Compact Tab Bar -->
+        <!-- Compact Safari Tab Bar -->
         <div class="tab-bar">
             <div class="tab active" data-tab-id="1">
                 <svg class="tab-favicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -63,10 +64,35 @@
                         </svg>
                     </span>
                     <input type="text" class="address-input" id="address-input" placeholder="Search or enter website name" spellcheck="false" autocomplete="off" />
+                    <!-- Bookmark Action -->
+                    <button class="action-btn" id="btn-add-bookmark" title="Bookmark Page" style="width:24px; height:24px;">
+                        <svg viewBox="0 0 24 24" width="14" height="14">
+                            <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+                        </svg>
+                    </button>
                 </div>
             </div>
 
+            <!-- Safari-Style Controls (Bookmarks, History, Downloads, Theme) -->
             <div class="nav-group">
+                <button class="action-btn" id="btn-bookmarks" title="Bookmarks">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                </button>
+                <button class="action-btn" id="btn-history" title="History">
+                    <svg viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="12 6 12 12 16 14"></polyline>
+                    </svg>
+                </button>
+                <button class="action-btn" id="btn-downloads" title="Downloads">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                </button>
                 <button class="action-btn" id="btn-theme" title="Toggle Appearance">
                     <svg viewBox="0 0 24 24">
                         <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
@@ -75,6 +101,22 @@
             </div>
         </div>
     </header>
+
+    <!-- Slide-out Sidebar Panel -->
+    <aside class="sidebar-overlay" id="sidebar-panel">
+        <div class="sidebar-header">
+            <span class="sidebar-title" id="sidebar-title">Bookmarks</span>
+            <button class="sidebar-close" id="sidebar-close">
+                <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+        <div class="sidebar-content" id="sidebar-content">
+            <!-- Dynamically populated via app.js -->
+        </div>
+    </aside>
 
     <script src="scripts/app.js"></script>
 </body>

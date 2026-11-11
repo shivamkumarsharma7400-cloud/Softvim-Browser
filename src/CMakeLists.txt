@@ -20,6 +20,8 @@ set(SOFTVIM_SOURCES
     ui_handler.cc
     tab_manager.h
     tab_manager.cc
+    storage_manager.h
+    storage_manager.cc
     resource_util.h
     resource_util.cc
 )

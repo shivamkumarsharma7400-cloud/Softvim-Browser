@@ -1,7 +1,9 @@
 /**
  * Softvim Browser — UI Controller
- * Manages tabs, address bar, navigation, and IPC with the C++ host.
+ * Manages Tabs, Address Bar, Bookmarks, History, Downloads, and Settings.
  */
+
+let currentSidebarMode = null;
 
 const NativeHost = {
     navigate: function(url) {
@@ -67,6 +69,67 @@ const NativeHost = {
             });
         }
     },
+    // Panels & Storage Requests
+    getBookmarks: function(callback) {
+        if (window.cefQuery) {
+            window.cefQuery({
+                request: JSON.stringify({ action: 'get_bookmarks' }),
+                onSuccess: function(response) { callback(JSON.parse(response)); },
+                onFailure: function() { callback([]); }
+            });
+        }
+    },
+    addBookmark: function(title, url) {
+        if (window.cefQuery) {
+            window.cefQuery({
+                request: JSON.stringify({ action: 'add_bookmark', title: title, url: url }),
+                onSuccess: function() {
+                    if (currentSidebarMode === 'bookmarks') openSidebar('bookmarks');
+                },
+                onFailure: function() {}
+            });
+        }
+    },
+    deleteBookmark: function(id) {
+        if (window.cefQuery) {
+            window.cefQuery({
+                request: JSON.stringify({ action: 'delete_bookmark', id: id }),
+                onSuccess: function() {
+                    if (currentSidebarMode === 'bookmarks') openSidebar('bookmarks');
+                },
+                onFailure: function() {}
+            });
+        }
+    },
+    getHistory: function(callback) {
+        if (window.cefQuery) {
+            window.cefQuery({
+                request: JSON.stringify({ action: 'get_history' }),
+                onSuccess: function(response) { callback(JSON.parse(response)); },
+                onFailure: function() { callback([]); }
+            });
+        }
+    },
+    clearHistory: function() {
+        if (window.cefQuery) {
+            window.cefQuery({
+                request: JSON.stringify({ action: 'clear_history' }),
+                onSuccess: function() {
+                    if (currentSidebarMode === 'history') openSidebar('history');
+                },
+                onFailure: function() {}
+            });
+        }
+    },
+    getDownloads: function(callback) {
+        if (window.cefQuery) {
+            window.cefQuery({
+                request: JSON.stringify({ action: 'get_downloads' }),
+                onSuccess: function(response) { callback(JSON.parse(response)); },
+                onFailure: function() { callback([]); }
+            });
+        }
+    },
     toggleTheme: function() {
         const html = document.documentElement;
         const currentTheme = html.getAttribute('data-theme') || 'dark';
@@ -82,12 +145,31 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnReload = document.getElementById('btn-reload');
     const btnTheme = document.getElementById('btn-theme');
     const btnNewTab = document.querySelector('.new-tab-btn');
+    const btnBookmarks = document.getElementById('btn-bookmarks');
+    const btnHistory = document.getElementById('btn-history');
+    const btnDownloads = document.getElementById('btn-downloads');
+    const btnAddBookmark = document.getElementById('btn-add-bookmark');
+    const sidebarClose = document.getElementById('sidebar-close');
 
     if (btnBack) btnBack.addEventListener('click', () => NativeHost.goBack());
     if (btnForward) btnForward.addEventListener('click', () => NativeHost.goForward());
     if (btnReload) btnReload.addEventListener('click', () => NativeHost.reload());
     if (btnTheme) btnTheme.addEventListener('click', () => NativeHost.toggleTheme());
     if (btnNewTab) btnNewTab.addEventListener('click', () => NativeHost.newTab());
+
+    if (btnBookmarks) btnBookmarks.addEventListener('click', () => toggleSidebar('bookmarks'));
+    if (btnHistory) btnHistory.addEventListener('click', () => toggleSidebar('history'));
+    if (btnDownloads) btnDownloads.addEventListener('click', () => toggleSidebar('downloads'));
+    if (sidebarClose) sidebarClose.addEventListener('click', () => closeSidebar());
+
+    if (btnAddBookmark) {
+        btnAddBookmark.addEventListener('click', () => {
+            const url = addressInput ? addressInput.value : '';
+            const activeTab = document.querySelector('.tab.active .tab-title');
+            const title = activeTab ? activeTab.textContent : url;
+            if (url) NativeHost.addBookmark(title, url);
+        });
+    }
 
     if (addressInput) {
         addressInput.addEventListener('keydown', (e) => {
@@ -107,12 +189,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        addressInput.addEventListener('focus', () => {
-            addressInput.select();
-        });
+        addressInput.addEventListener('focus', () => addressInput.select());
     }
 
-    // Attach click listeners to existing tabs
     bindTabEvents();
 });
 
@@ -131,14 +210,118 @@ function bindTabEvents() {
 }
 
 // ──────────────────────────────────────────────
-// Host Callback Handlers
+// Sidebar Panels
+// ──────────────────────────────────────────────
+
+function toggleSidebar(mode) {
+    if (currentSidebarMode === mode) {
+        closeSidebar();
+    } else {
+        openSidebar(mode);
+    }
+}
+
+function openSidebar(mode) {
+    currentSidebarMode = mode;
+    const sidebar = document.getElementById('sidebar-panel');
+    const title = document.getElementById('sidebar-title');
+    const content = document.getElementById('sidebar-content');
+    if (!sidebar || !title || !content) return;
+
+    sidebar.classList.add('open');
+    content.innerHTML = '<div style="color:var(--text-secondary); padding:var(--space-2);">Loading...</div>';
+
+    if (mode === 'bookmarks') {
+        title.textContent = 'Bookmarks';
+        NativeHost.getBookmarks((items) => {
+            renderPanelItems(content, items, (item) => {
+                NativeHost.navigate(item.url);
+                closeSidebar();
+            }, (id) => NativeHost.deleteBookmark(id));
+        });
+    } else if (mode === 'history') {
+        title.textContent = 'History';
+        NativeHost.getHistory((items) => {
+            renderPanelItems(content, items, (item) => {
+                NativeHost.navigate(item.url);
+                closeSidebar();
+            }, null);
+        });
+    } else if (mode === 'downloads') {
+        title.textContent = 'Downloads';
+        NativeHost.getDownloads((items) => {
+            renderDownloads(content, items);
+        });
+    }
+}
+
+function closeSidebar() {
+    currentSidebarMode = null;
+    const sidebar = document.getElementById('sidebar-panel');
+    if (sidebar) sidebar.classList.remove('open');
+}
+
+function renderPanelItems(container, items, onClick, onDelete) {
+    if (!items || items.length === 0) {
+        container.innerHTML = '<div style="color:var(--text-secondary); text-align:center; padding:var(--space-4);">No items found</div>';
+        return;
+    }
+    container.innerHTML = '';
+    items.forEach(item => {
+        const row = document.createElement('div');
+        row.className = 'panel-item';
+        row.innerHTML = `
+            <div class="panel-item-left">
+                <span class="panel-item-title">${item.title || item.url}</span>
+                <span class="panel-item-subtitle">${item.url}</span>
+            </div>
+            ${onDelete ? `<button class="panel-item-delete" title="Delete">
+                <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>` : ''}
+        `;
+        row.querySelector('.panel-item-left').onclick = () => onClick(item);
+        if (onDelete) {
+            const delBtn = row.querySelector('.panel-item-delete');
+            if (delBtn) {
+                delBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    onDelete(item.id);
+                };
+            }
+        }
+        container.appendChild(row);
+    });
+}
+
+function renderDownloads(container, items) {
+    if (!items || items.length === 0) {
+        container.innerHTML = '<div style="color:var(--text-secondary); text-align:center; padding:var(--space-4);">No downloads yet</div>';
+        return;
+    }
+    container.innerHTML = '';
+    items.forEach(item => {
+        const row = document.createElement('div');
+        row.className = 'panel-item';
+        row.innerHTML = `
+            <div class="panel-item-left">
+                <span class="panel-item-title">${item.file_name}</span>
+                <span class="panel-item-subtitle">${item.state} — ${item.percent}%</span>
+            </div>
+        `;
+        container.appendChild(row);
+    });
+}
+
+// ──────────────────────────────────────────────
+// Host Callbacks
 // ──────────────────────────────────────────────
 
 window.onTabCreated = function(tabData) {
     const tabBar = document.querySelector('.tab-bar');
     const newTabBtn = document.querySelector('.new-tab-btn');
-
-    // Deselect current active tab
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
 
     const tabElem = document.createElement('div');

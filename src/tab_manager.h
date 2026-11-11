@@ -56,3 +56,4 @@ class TabManager {
 };
 
 #endif  // SOFTVIM_TAB_MANAGER_H_
+

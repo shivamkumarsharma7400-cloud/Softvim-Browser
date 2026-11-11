@@ -173,3 +173,4 @@ void TabManager::ReloadActiveTab() {
     active->handler->GetBrowser()->Reload();
   }
 }
+

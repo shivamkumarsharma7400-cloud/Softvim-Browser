@@ -3,6 +3,7 @@
 
 #include "client_handler.h"
 #include "browser_window.h"
+#include "storage_manager.h"
 
 #include <sstream>
 #include <string>
@@ -22,6 +23,11 @@ void ClientHandler::OnTitleChange(CefRefPtr<CefBrowser> browser,
     int browserId = browser->GetIdentifier();
     std::string currentUrl = browser->GetMainFrame() ? browser->GetMainFrame()->GetURL().ToString() : "";
     window->NotifyNavigationState(browserId, currentUrl, title.ToString(), browser->CanGoBack(), browser->CanGoForward());
+    
+    // Automatically log history
+    if (!currentUrl.empty() && currentUrl.find("http") == 0) {
+      StorageManager::GetInstance()->AddHistory(title.ToString(), currentUrl);
+    }
   }
 }
 
