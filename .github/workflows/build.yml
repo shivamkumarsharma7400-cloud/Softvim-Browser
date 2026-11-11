@@ -1,25 +1,22 @@
-name: Build Softvim Browser
-
-# Builds the browser on every push and PR to main.
-# Uses the windows-2022 runner which has Visual Studio 2022 pre-installed.
+name: Build and Package Softvim Browser
 
 on:
   push:
     branches: [main]
   pull_request:
     branches: [main]
-  workflow_dispatch:  # Allow manual trigger from GitHub UI
+  workflow_dispatch:
 
 jobs:
   build:
-    name: Windows x64 Build
+    name: Build & Package (Windows x64)
     runs-on: windows-2022
 
     env:
       BUILD_TYPE: Release
 
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Setup Python
@@ -27,7 +24,7 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Cache CEF binary distribution
+      - name: Cache CEF Binary Framework
         uses: actions/cache@v4
         id: cef-cache
         with:
@@ -44,54 +41,51 @@ jobs:
             -DUSE_SANDBOX=OFF `
             ..
 
-      - name: Build
+      - name: Build Application
         shell: pwsh
         run: |
           cmake --build build --config ${{ env.BUILD_TYPE }} -j 4
 
-      - name: Verify build
+      - name: Stage Distribution Files
         shell: pwsh
         run: |
-          $exePath = "build/bin/${{ env.BUILD_TYPE }}/SoftvimBrowser.exe"
-          if (Test-Path $exePath) {
-              Write-Host "✅ SoftvimBrowser.exe built successfully"
-              Get-Item $exePath | Select-Object Name, Length, LastWriteTime
-          } else {
-              # Try alternate paths
-              $found = Get-ChildItem -Path build -Recurse -Filter "SoftvimBrowser.exe" | Select -First 1
-              if ($found) {
-                  Write-Host "✅ Found at: $($found.FullName)"
-              } else {
-                  Write-Error "❌ SoftvimBrowser.exe not found!"
-                  Get-ChildItem -Path build -Recurse -Filter "*.exe" | Select FullName
-                  exit 1
-              }
-          }
-
-      - name: Package artifacts
-        shell: pwsh
-        run: |
-          # Find the output directory
-          $outputDir = "build/bin/${{ env.BUILD_TYPE }}"
-          if (!(Test-Path $outputDir)) {
-              $exe = Get-ChildItem -Path build -Recurse -Filter "SoftvimBrowser.exe" | Select -First 1
-              $outputDir = $exe.DirectoryName
-          }
-
-          # Create a clean distribution directory
           $distDir = "dist/SoftvimBrowser"
           mkdir $distDir -Force
 
-          # Copy all necessary files
-          Copy-Item "$outputDir/*" $distDir -Recurse -Force
+          # Find compiled output folder
+          $outPath = "build/bin/${{ env.BUILD_TYPE }}"
+          if (!(Test-Path $outPath)) {
+              $exe = Get-ChildItem -Path build -Recurse -Filter "SoftvimBrowser.exe" | Select-Object -First 1
+              $outPath = $exe.DirectoryName
+          }
 
-          Write-Host "Distribution contents:"
-          Get-ChildItem $distDir -Recurse | Select Name, Length | Format-Table
+          Copy-Item "$outPath/*" $distDir -Recurse -Force
+          Write-Host "Staged application directory successfully."
 
-      - name: Upload build artifact
+      - name: Compile Inno Setup Installer
+        shell: pwsh
+        run: |
+          # Use Inno Setup compiler pre-installed on GitHub Actions windows runners
+          $iscc = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
+          if (Test-Path $iscc) {
+              mkdir dist/Installer -Force
+              & $iscc "resources/installer.iss"
+              Write-Host "Inno Setup installer created successfully."
+          } else {
+              Write-Warning "ISCC.exe not found on runner; standalone folder distribution will be uploaded."
+          }
+
+      - name: Upload Standalone Distribution Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: SoftvimBrowser-windows-x64
+          name: SoftvimBrowser-Standalone-x64
           path: dist/SoftvimBrowser/
           retention-days: 14
 
+      - name: Upload Installer Artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: SoftvimBrowser-Installer-x64
+          path: dist/Installer/
+          retention-days: 14
