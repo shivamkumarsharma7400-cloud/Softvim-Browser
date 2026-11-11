@@ -1,0 +1,43 @@
+// Copyright (c) 2024 Softvim Solutions. All rights reserved.
+// Windows resource file for Softvim Browser.
+
+// Application icon (shown in taskbar, title bar, Alt+Tab)
+// Icon ID 101 is referenced in browser_window.cc
+101 ICON "softvim.ico"
+
+// Version information
+#include <winver.h>
+
+VS_VERSION_INFO VERSIONINFO
+FILEVERSION     0,1,0,0
+PRODUCTVERSION  0,1,0,0
+FILEFLAGSMASK   VS_FFI_FILEFLAGSMASK
+#ifdef _DEBUG
+FILEFLAGS       VS_FF_DEBUG
+#else
+FILEFLAGS       0
+#endif
+FILEOS          VOS_NT_WINDOWS32
+FILETYPE        VFT_APP
+FILESUBTYPE     VFT2_UNKNOWN
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904B0"
+        BEGIN
+            VALUE "CompanyName",      "Softvim Solutions"
+            VALUE "FileDescription",  "Softvim Browser"
+            VALUE "FileVersion",      "0.1.0"
+            VALUE "InternalName",     "SoftvimBrowser"
+            VALUE "LegalCopyright",   "Copyright (c) 2024 Softvim Solutions"
+            VALUE "OriginalFilename", "SoftvimBrowser.exe"
+            VALUE "ProductName",      "Softvim Browser"
+            VALUE "ProductVersion",   "0.1.0"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x0409, 0x04B0
+    END
+END
+

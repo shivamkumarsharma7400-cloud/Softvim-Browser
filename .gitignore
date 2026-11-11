@@ -1,0 +1,44 @@
+# Softvim Browser — Gitignore
+# Keeps the repository clean by excluding build artifacts and dependencies.
+
+# ── Build output ──
+build/
+out/
+bin/
+*.obj
+*.pdb
+*.ilk
+*.exp
+*.idb
+
+# ── CEF binary distribution (large, downloaded during build) ──
+third_party/
+
+# ── IDE files ──
+.vs/
+.vscode/
+*.suo
+*.user
+*.sln
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+CMakeSettings.json
+.idea/
+
+# ── CMake generated files ──
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+compile_commands.json
+
+# ── OS files ──
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# ── Logs ──
+*.log
+debug.log
+

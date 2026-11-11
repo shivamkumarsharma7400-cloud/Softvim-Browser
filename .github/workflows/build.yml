@@ -1,0 +1,97 @@
+name: Build Softvim Browser
+
+# Builds the browser on every push and PR to main.
+# Uses the windows-2022 runner which has Visual Studio 2022 pre-installed.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:  # Allow manual trigger from GitHub UI
+
+jobs:
+  build:
+    name: Windows x64 Build
+    runs-on: windows-2022
+
+    env:
+      BUILD_TYPE: Release
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Cache CEF binary distribution
+        uses: actions/cache@v4
+        id: cef-cache
+        with:
+          path: third_party/cef
+          key: cef-${{ hashFiles('CMakeLists.txt') }}-windows64
+
+      - name: Configure CMake
+        shell: pwsh
+        run: |
+          mkdir build -ErrorAction SilentlyContinue
+          cd build
+          cmake -G "Visual Studio 17 2022" -A x64 `
+            -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} `
+            -DUSE_SANDBOX=OFF `
+            ..
+
+      - name: Build
+        shell: pwsh
+        run: |
+          cmake --build build --config ${{ env.BUILD_TYPE }} -j 4
+
+      - name: Verify build
+        shell: pwsh
+        run: |
+          $exePath = "build/bin/${{ env.BUILD_TYPE }}/SoftvimBrowser.exe"
+          if (Test-Path $exePath) {
+              Write-Host "✅ SoftvimBrowser.exe built successfully"
+              Get-Item $exePath | Select-Object Name, Length, LastWriteTime
+          } else {
+              # Try alternate paths
+              $found = Get-ChildItem -Path build -Recurse -Filter "SoftvimBrowser.exe" | Select -First 1
+              if ($found) {
+                  Write-Host "✅ Found at: $($found.FullName)"
+              } else {
+                  Write-Error "❌ SoftvimBrowser.exe not found!"
+                  Get-ChildItem -Path build -Recurse -Filter "*.exe" | Select FullName
+                  exit 1
+              }
+          }
+
+      - name: Package artifacts
+        shell: pwsh
+        run: |
+          # Find the output directory
+          $outputDir = "build/bin/${{ env.BUILD_TYPE }}"
+          if (!(Test-Path $outputDir)) {
+              $exe = Get-ChildItem -Path build -Recurse -Filter "SoftvimBrowser.exe" | Select -First 1
+              $outputDir = $exe.DirectoryName
+          }
+
+          # Create a clean distribution directory
+          $distDir = "dist/SoftvimBrowser"
+          mkdir $distDir -Force
+
+          # Copy all necessary files
+          Copy-Item "$outputDir/*" $distDir -Recurse -Force
+
+          Write-Host "Distribution contents:"
+          Get-ChildItem $distDir -Recurse | Select Name, Length | Format-Table
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: SoftvimBrowser-windows-x64
+          path: dist/SoftvimBrowser/
+          retention-days: 14
+
