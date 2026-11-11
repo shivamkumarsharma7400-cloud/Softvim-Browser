@@ -59,6 +59,9 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+# Ensure MSVC uses static runtime (/MT and /MTd) across ALL targets to match CEF libcef_dll_wrapper
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+
 # MSVC specific settings
 if(MSVC)
     # Use multi-threaded static runtime (required by CEF)
