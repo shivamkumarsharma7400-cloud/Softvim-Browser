@@ -1,5 +1,5 @@
 // Copyright (c) 2024 Softvim Solutions. All rights reserved.
-// browser_window.h — Main browser window with multi-tab architecture.
+// browser_window.h — Main browser window with Private Browsing & Keyboard Shortcuts.
 
 #ifndef SOFTVIM_BROWSER_WINDOW_H_
 #define SOFTVIM_BROWSER_WINDOW_H_
@@ -21,7 +21,7 @@ class BrowserWindow {
   CefRefPtr<CefBrowser> GetUiBrowser() const;
 
   // Tab management actions invoked from UI
-  int CreateTab(const std::string& url = "https://www.google.com");
+  int CreateTab(const std::string& url = "https://www.google.com", bool is_private = false);
   bool CloseTab(int tab_id);
   bool SwitchToTab(int tab_id);
 

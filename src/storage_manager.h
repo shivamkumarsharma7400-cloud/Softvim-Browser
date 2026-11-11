@@ -84,3 +84,4 @@ class StorageManager {
 };
 
 #endif  // SOFTVIM_STORAGE_MANAGER_H_
+

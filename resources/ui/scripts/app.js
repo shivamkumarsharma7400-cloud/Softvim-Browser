@@ -1,6 +1,6 @@
 /**
  * Softvim Browser — UI Controller
- * Manages Tabs, Address Bar, Bookmarks, History, Downloads, and Settings.
+ * Manages Tabs, Address Bar, Bookmarks, History, Downloads, Settings, Private Browsing & Keyboard Shortcuts.
  */
 
 let currentSidebarMode = null;
@@ -42,10 +42,10 @@ const NativeHost = {
             });
         }
     },
-    newTab: function() {
+    newTab: function(isPrivate = false) {
         if (window.cefQuery) {
             window.cefQuery({
-                request: JSON.stringify({ action: 'new_tab' }),
+                request: JSON.stringify({ action: 'new_tab', is_private: isPrivate }),
                 onSuccess: function() {},
                 onFailure: function() {}
             });
@@ -69,7 +69,6 @@ const NativeHost = {
             });
         }
     },
-    // Panels & Storage Requests
     getBookmarks: function(callback) {
         if (window.cefQuery) {
             window.cefQuery({
@@ -145,6 +144,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnReload = document.getElementById('btn-reload');
     const btnTheme = document.getElementById('btn-theme');
     const btnNewTab = document.querySelector('.new-tab-btn');
+    const btnPrivate = document.getElementById('btn-private');
     const btnBookmarks = document.getElementById('btn-bookmarks');
     const btnHistory = document.getElementById('btn-history');
     const btnDownloads = document.getElementById('btn-downloads');
@@ -155,7 +155,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (btnForward) btnForward.addEventListener('click', () => NativeHost.goForward());
     if (btnReload) btnReload.addEventListener('click', () => NativeHost.reload());
     if (btnTheme) btnTheme.addEventListener('click', () => NativeHost.toggleTheme());
-    if (btnNewTab) btnNewTab.addEventListener('click', () => NativeHost.newTab());
+    if (btnNewTab) btnNewTab.addEventListener('click', () => NativeHost.newTab(false));
+    if (btnPrivate) btnPrivate.addEventListener('click', () => NativeHost.newTab(true));
 
     if (btnBookmarks) btnBookmarks.addEventListener('click', () => toggleSidebar('bookmarks'));
     if (btnHistory) btnHistory.addEventListener('click', () => toggleSidebar('history'));
@@ -192,6 +193,81 @@ document.addEventListener('DOMContentLoaded', () => {
         addressInput.addEventListener('focus', () => addressInput.select());
     }
 
+    // ────────────────────────────────────────────
+    // Keyboard Shortcuts (Milestone 5)
+    // ────────────────────────────────────────────
+    window.addEventListener('keydown', (e) => {
+        // Ctrl+T: New Tab
+        if (e.ctrlKey && !e.shiftKey && e.key.toLowerCase() === 't') {
+            e.preventDefault();
+            NativeHost.newTab(false);
+        }
+        // Ctrl+Shift+P: New Private Tab
+        else if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'p') {
+            e.preventDefault();
+            NativeHost.newTab(true);
+        }
+        // Ctrl+W: Close active tab
+        else if (e.ctrlKey && e.key.toLowerCase() === 'w') {
+            e.preventDefault();
+            const activeTab = document.querySelector('.tab.active');
+            if (activeTab) {
+                const id = parseInt(activeTab.getAttribute('data-tab-id'));
+                NativeHost.closeTab(id);
+            }
+        }
+        // Ctrl+L: Focus address bar
+        else if (e.ctrlKey && e.key.toLowerCase() === 'l') {
+            e.preventDefault();
+            if (addressInput) {
+                addressInput.focus();
+                addressInput.select();
+            }
+        }
+        // Ctrl+R or F5: Reload
+        else if ((e.ctrlKey && e.key.toLowerCase() === 'r') || e.key === 'F5') {
+            e.preventDefault();
+            NativeHost.reload();
+        }
+        // Alt+Left: Back
+        else if (e.altKey && e.key === 'ArrowLeft') {
+            e.preventDefault();
+            NativeHost.goBack();
+        }
+        // Alt+Right: Forward
+        else if (e.altKey && e.key === 'ArrowRight') {
+            e.preventDefault();
+            NativeHost.goForward();
+        }
+        // Ctrl+B: Bookmarks
+        else if (e.ctrlKey && e.key.toLowerCase() === 'b') {
+            e.preventDefault();
+            toggleSidebar('bookmarks');
+        }
+        // Ctrl+H: History
+        else if (e.ctrlKey && e.key.toLowerCase() === 'h') {
+            e.preventDefault();
+            toggleSidebar('history');
+        }
+        // Ctrl+J: Downloads
+        else if (e.ctrlKey && e.key.toLowerCase() === 'j') {
+            e.preventDefault();
+            toggleSidebar('downloads');
+        }
+        // Ctrl+D: Bookmark Page
+        else if (e.ctrlKey && e.key.toLowerCase() === 'd') {
+            e.preventDefault();
+            const url = addressInput ? addressInput.value : '';
+            const activeTab = document.querySelector('.tab.active .tab-title');
+            const title = activeTab ? activeTab.textContent : url;
+            if (url) NativeHost.addBookmark(title, url);
+        }
+        // Escape: Close sidebar
+        else if (e.key === 'Escape') {
+            closeSidebar();
+        }
+    });
+
     bindTabEvents();
 });
 
@@ -208,10 +284,6 @@ function bindTabEvents() {
         };
     });
 }
-
-// ──────────────────────────────────────────────
-// Sidebar Panels
-// ──────────────────────────────────────────────
 
 function toggleSidebar(mode) {
     if (currentSidebarMode === mode) {
@@ -324,13 +396,14 @@ window.onTabCreated = function(tabData) {
     const newTabBtn = document.querySelector('.new-tab-btn');
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
 
+    const isPrivate = tabData.title && tabData.title.includes('Private');
+
     const tabElem = document.createElement('div');
-    tabElem.className = 'tab active';
+    tabElem.className = 'tab active' + (isPrivate ? ' private-tab' : '');
     tabElem.setAttribute('data-tab-id', tabData.id);
     tabElem.innerHTML = `
         <svg class="tab-favicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="10"></circle>
-            <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon>
+            ${isPrivate ? '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>' : '<circle cx="12" cy="12" r="10"></circle><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon>'}
         </svg>
         <span class="tab-title">${tabData.title || 'New Tab'}</span>
         <span class="tab-close">

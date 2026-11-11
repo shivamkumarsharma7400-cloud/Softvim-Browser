@@ -1,5 +1,5 @@
 // Copyright (c) 2024 Softvim Solutions. All rights reserved.
-// ui_handler.cc — Implementation of UiHandler with Storage & Panels IPC.
+// ui_handler.cc — Implementation with Private Browsing & Shortcut Queries.
 
 #include "ui_handler.h"
 #include "browser_window.h"
@@ -62,9 +62,10 @@ class UiQueryHandler : public CefMessageRouterBrowserSide::Handler {
       return true;
     }
 
-    // Tab Actions
+    // Tab Actions (Regular & Private Mode)
     else if (req.find("\"action\":\"new_tab\"") != std::string::npos) {
-      int new_id = window->CreateTab();
+      bool is_private = (req.find("\"is_private\":true") != std::string::npos);
+      int new_id = window->CreateTab("https://www.google.com", is_private);
       callback->Success(std::to_string(new_id));
       return true;
     } else if (req.find("\"action\":\"switch_tab\"") != std::string::npos) {
@@ -85,7 +86,7 @@ class UiQueryHandler : public CefMessageRouterBrowserSide::Handler {
       }
     }
 
-    // Milestone 4: Bookmarks, History, Downloads Actions
+    // Storage Actions
     else if (req.find("\"action\":\"get_bookmarks\"") != std::string::npos) {
       callback->Success(storage->GetBookmarksJson());
       return true;

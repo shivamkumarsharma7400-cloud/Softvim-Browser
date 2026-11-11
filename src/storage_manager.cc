@@ -206,3 +206,4 @@ std::string StorageManager::GetDownloadsJson() {
   ss << "]";
   return ss.str();
 }
+

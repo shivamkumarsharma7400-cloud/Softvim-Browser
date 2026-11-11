@@ -1,5 +1,5 @@
 // Copyright (c) 2024 Softvim Solutions. All rights reserved.
-// browser_window.cc — Multi-tab browser window implementation.
+// browser_window.cc — Multi-tab browser window with Private Browsing & Shortcuts.
 
 #include "browser_window.h"
 
@@ -38,11 +38,11 @@ CefRefPtr<CefBrowser> BrowserWindow::GetUiBrowser() const {
   return ui_handler_ ? ui_handler_->GetBrowser() : nullptr;
 }
 
-int BrowserWindow::CreateTab(const std::string& url) {
+int BrowserWindow::CreateTab(const std::string& url, bool is_private) {
   if (tab_manager_) {
-    int tab_id = tab_manager_->CreateTab(url);
+    int tab_id = tab_manager_->CreateTab(url, is_private);
     if (ui_handler_) {
-      ui_handler_->OnTabCreated(tab_id, "New Tab", url);
+      ui_handler_->OnTabCreated(tab_id, is_private ? "Private Tab" : "New Tab", url);
     }
     return tab_id;
   }
@@ -160,7 +160,6 @@ void BrowserWindow::CreateBrowsers() {
   GetClientRect(hwnd_, &rect);
   int width = rect.right - rect.left;
 
-  // 1. Create UI Chrome Browser View (Top docking)
   ui_handler_ = new UiHandler();
   CefWindowInfo uiWindowInfo;
   RECT uiRect = {0, 0, width, kUiChromeHeight};
@@ -183,7 +182,6 @@ void BrowserWindow::CreateBrowsers() {
       nullptr
   );
 
-  // 2. Initialize TabManager & create first tab
   tab_manager_ = std::make_unique<TabManager>(hwnd_, kUiChromeHeight);
   tab_manager_->CreateTab("https://www.google.com");
 }
@@ -227,7 +225,6 @@ void BrowserWindow::OnSize() {
   int width = rect.right - rect.left;
   int height = rect.bottom - rect.top;
 
-  // Resize UI Chrome View
   if (ui_handler_ && ui_handler_->GetBrowser()) {
     HWND uiHwnd = ui_handler_->GetBrowser()->GetHost()->GetWindowHandle();
     if (uiHwnd) {
@@ -235,7 +232,6 @@ void BrowserWindow::OnSize() {
     }
   }
 
-  // Resize Active Content View
   if (tab_manager_) {
     tab_manager_->ResizeActiveTab(width, height);
   }
