@@ -1,103 +1,100 @@
 # Softvim Browser
 
-A lightweight, premium Chromium-based browser for Windows, built with C++ and the Chromium Embedded Framework (CEF).
+Softvim Browser is a lightweight, custom Chromium-powered Windows web browser developed by Softvim Solutions. It uses C++ and the Chromium Embedded Framework (CEF 144) in Alloy runtime mode, coupled with a minimal, elegant desktop user interface.
 
-Softvim Browser is designed to be elegant, minimal, and calm — inspired by Safari's design philosophy while feeling native to Windows.
+## Highlights & Features
 
-![Status](https://img.shields.io/badge/status-pre--alpha-orange)
-![Platform](https://img.shields.io/badge/platform-Windows%20x64-blue)
-![CEF](https://img.shields.io/badge/engine-Chromium%20144-green)
+- **Custom Dual-View Architecture**: A dedicated native Win32 window hosting a top HTML/CSS/JS control chrome and isolated content browser instances below.
+- **Safari-Inspired Visual Aesthetic**: Centered, rounded search/address bar, compact tab bar, thin-line iconography, and light/dark theme toggle.
+- **Multi-Tab Management**: Tab switching, new tab creation, and smooth cleanup without page reloads.
+- **Private Browsing Mode**: Isolated in-memory request contexts that prevent cookies, local cache, and history from persisting to disk.
+- **Persistent Local Storage**: Bookmarks, browsing history, and download activity tracking stored securely in `%LOCALAPPDATA%`.
+- **Keyboard Shortcuts**: Complete desktop shortcuts (`Ctrl+T`, `Ctrl+W`, `Ctrl+L`, `Ctrl+R`, `Ctrl+Shift+P`, `Ctrl+B`, `Ctrl+H`, `Ctrl+J`, and more).
+- **Automated Cloud CI/CD**: Pre-configured GitHub Actions build workflow for compiling Windows x64 binaries without needing a local MSVC compiler installation.
 
 ---
 
-## Features (Roadmap)
+## Directory Structure
 
-- [x] **Milestone 1** — CEF browser window with Chromium rendering
-- [ ] **Milestone 2** — Custom Safari-inspired toolbar with address bar
-- [ ] **Milestone 3** — Tab management
-- [ ] **Milestone 4** — Bookmarks, downloads, history, settings
-- [ ] **Milestone 5** — Private browsing, themes, keyboard shortcuts
-- [ ] **Milestone 6** — Installer and release
+```text
+Browser/
+├── .github/workflows/
+│   └── build.yml             # GitHub Actions CI build & packaging pipeline
+├── cmake/
+│   └── DownloadCEF.cmake     # Automatic CEF 144 binary distribution downloader
+├── resources/
+│   ├── installer.iss         # Inno Setup Windows installer script
+│   ├── softvim.ico           # Application icon
+│   ├── softvim.rc            # Windows executable resource file
+│   └── ui/                   # Browser UI chrome (HTML5 / CSS3 / JavaScript)
+│       ├── index.html        # Main toolbar & sidebar structure
+│       ├── scripts/app.js    # Browser frontend controller & IPC client
+│       └── styles/           # Theme, toolbar, and sidebar stylesheets
+├── src/                      # C++ browser implementation
+│   ├── CMakeLists.txt        # Build definitions & target settings
+│   ├── main.cc               # WinMain entry point & DPI enablement
+│   ├── app.h / app.cc        # CEF application lifecycle handlers
+│   ├── browser_window.h / cc # Dual-view Win32 window manager
+│   ├── client_handler.h / cc # Web content client callbacks
+│   ├── ui_handler.h / cc     # UI chrome CEF client & IPC message router
+│   ├── tab_manager.h / cc    # Multi-tab lifecycle & Private Browsing manager
+│   ├── storage_manager.h / cc# Bookmarks, history, and downloads persistence
+│   └── resource_util.h / cc  # Resource resolution & URI helpers
+├── CMakeLists.txt            # Top-level project CMake configuration
+└── LICENSE                   # MIT License
+```
 
-## Building
+---
 
-### Prerequisites
+## How to Build
 
-- **Visual Studio 2022** (Community or Build Tools) with C++ desktop workload
-- **CMake 3.21+**
-- **Python 3.9–3.11** (required by CEF build scripts)
-- **Git**
+### Option A: Cloud Builds via GitHub Actions (Recommended)
 
-> **No compiler?** All builds also run automatically on GitHub Actions. Push your changes and download the built artifacts.
+1. Connect your local git repository to a GitHub remote:
+   ```powershell
+   git remote add origin https://github.com/<your-username>/<your-repo>.git
+   git push -u origin main
+   ```
+2. In GitHub, open the **Actions** tab.
+3. The build workflow will automatically configure CMake, download the official CEF binary distribution, compile `SoftvimBrowser.exe`, and generate the downloadable zip artifact.
 
-### Build Steps
+### Option B: Local Compilation on Windows
 
+Requirements:
+- Visual Studio 2022 (with "Desktop development with C++" workload)
+- CMake 3.21+
+- Python 3.9–3.11
+
+Commands:
 ```powershell
-# Clone the repository
-git clone https://github.com/softvim/browser.git
-cd browser
-
-# Create build directory
 mkdir build
 cd build
-
-# Configure (CMake will download CEF automatically — ~300MB, takes a few minutes)
 cmake -G "Visual Studio 17 2022" -A x64 -DCMAKE_BUILD_TYPE=Release ..
-
-# Build
 cmake --build . --config Release -j 4
-
-# Run
-./bin/Release/SoftvimBrowser.exe
 ```
+The compiled output will be generated inside `build/bin/Release/`.
 
-### GitHub Actions (Cloud Build)
+---
 
-Every push to `main` triggers an automated build. Download the latest build:
+## Keyboard Shortcuts
 
-1. Go to the **Actions** tab on GitHub
-2. Click the latest successful workflow run
-3. Download the **SoftvimBrowser-windows-x64** artifact
+| Shortcut | Description |
+| :--- | :--- |
+| `Ctrl + T` | Open a new tab |
+| `Ctrl + Shift + P` | Open a new Private Browsing tab |
+| `Ctrl + W` | Close the active tab |
+| `Ctrl + L` | Focus and highlight the address bar |
+| `Ctrl + R` / `F5` | Reload the active page |
+| `Alt + Left` | Go back in history |
+| `Alt + Right` | Go forward in history |
+| `Ctrl + B` | Toggle Bookmarks sidebar |
+| `Ctrl + H` | Toggle History sidebar |
+| `Ctrl + J` | Toggle Downloads sidebar |
+| `Ctrl + D` | Bookmark the current page |
+| `Escape` | Dismiss active sidebar |
 
-## Architecture
-
-```
-SoftvimBrowser.exe (main process)
-├── CEF Browser Process — Manages windows and navigation
-├── CEF Renderer Process — Renders web pages (sandboxed)
-├── CEF GPU Process — Hardware-accelerated graphics
-└── CEF Utility Processes — Network, audio, etc.
-```
-
-The browser uses CEF's **Alloy runtime mode**, which gives us full control over the user interface. The toolbar, tabs, and panels are rendered as HTML/CSS inside a dedicated CEF browser view — this is what enables the premium, Safari-inspired aesthetic.
-
-## Design Philosophy
-
-- **Elegant**: Every pixel is intentional
-- **Minimal**: Show only what's needed
-- **Calm**: No visual noise or distractions
-- **Native**: Respects Windows conventions
-- **Fast**: Lightweight interface, maximum content space
-
-## Project Structure
-
-```
-Browser/
-├── CMakeLists.txt          # Root build configuration
-├── cmake/                  # CMake helpers (CEF download)
-├── src/                    # C++ source code
-│   ├── main.cc             # Entry point
-│   ├── app.h/cc            # CEF application setup
-│   ├── browser_window.h/cc # Window management
-│   ├── client_handler.h/cc # Browser event handling
-│   └── resource_util.h/cc  # Resource helpers
-├── resources/              # UI assets and Windows resources
-│   ├── ui/                 # HTML/CSS/JS interface
-│   └── softvim.rc          # Windows resource script
-└── .github/workflows/      # CI/CD pipeline
-```
+---
 
 ## License
 
-Copyright © 2024 Softvim Solutions. All rights reserved.
-
+Softvim Browser is licensed under the [MIT License](LICENSE).
