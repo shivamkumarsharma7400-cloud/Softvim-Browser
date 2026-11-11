@@ -7,6 +7,9 @@ on:
     branches: [main]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     name: Build & Package (Windows x64)
@@ -52,7 +55,6 @@ jobs:
           $distDir = "dist/SoftvimBrowser"
           mkdir $distDir -Force
 
-          # Find compiled output folder
           $outPath = "build/bin/${{ env.BUILD_TYPE }}"
           if (!(Test-Path $outPath)) {
               $exe = Get-ChildItem -Path build -Recurse -Filter "SoftvimBrowser.exe" | Select-Object -First 1
@@ -62,17 +64,19 @@ jobs:
           Copy-Item "$outPath/*" $distDir -Recurse -Force
           Write-Host "Staged application directory successfully."
 
+          # Create a fast portable zip for instant download
+          Compress-Archive -Path "$distDir/*" -DestinationPath "dist/SoftvimBrowser-v0.1.0-Portable-x64.zip" -Force
+
       - name: Compile Inno Setup Installer
         shell: pwsh
         run: |
-          # Use Inno Setup compiler pre-installed on GitHub Actions windows runners
           $iscc = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
           if (Test-Path $iscc) {
               mkdir dist/Installer -Force
               & $iscc "resources/installer.iss"
               Write-Host "Inno Setup installer created successfully."
           } else {
-              Write-Warning "ISCC.exe not found on runner; standalone folder distribution will be uploaded."
+              Write-Warning "ISCC.exe not found on runner."
           }
 
       - name: Upload Standalone Distribution Artifact
@@ -89,3 +93,26 @@ jobs:
           name: SoftvimBrowser-Installer-x64
           path: dist/Installer/
           retention-days: 14
+
+      - name: Publish High-Speed GitHub Release
+        if: github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v0.1.0-preview
+          name: "Softvim Browser v0.1.0 Preview (Windows x64)"
+          body: |
+            ## Softvim Browser v0.1.0 Preview
+            Lightweight, Safari-inspired Chromium desktop browser for Windows.
+            
+            ### High-Speed Direct Downloads (No Throttling):
+            - **Windows Installer (Setup .exe)**: `SoftvimBrowser_Setup_x64.exe`
+            - **Portable Zip**: `SoftvimBrowser-v0.1.0-Portable-x64.zip`
+            
+            *Directly hosted on GitHub's global Azure CDN edge network for maximum download speed.*
+          files: |
+            dist/Installer/SoftvimBrowser_Setup_x64.exe
+            dist/SoftvimBrowser-v0.1.0-Portable-x64.zip
+          draft: false
+          prerelease: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
