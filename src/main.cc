@@ -9,6 +9,7 @@
 #include <windows.h>
 #include <shlwapi.h>
 #include <shobjidl.h>
+#include <shlobj.h>
 
 #include "app.h"
 #include "include/cef_app.h"
@@ -56,6 +57,15 @@ int APIENTRY wWinMain(HINSTANCE hInstance,
   // Configure CEF settings.
   CefSettings settings;
   settings.no_sandbox = true;
+
+  // Set dedicated user data directory in AppData\Local\Softvim Browser to avoid singleton conflicts
+  wchar_t appDataPath[MAX_PATH];
+  if (SUCCEEDED(SHGetFolderPathW(nullptr, CSIDL_LOCAL_APPDATA, nullptr, 0, appDataPath))) {
+    std::wstring softvimData = std::wstring(appDataPath) + L"\\Softvim Solutions\\Softvim Browser\\User Data";
+    std::wstring softvimCache = std::wstring(appDataPath) + L"\\Softvim Solutions\\Softvim Browser\\Cache";
+    CefString(&settings.root_cache_path) = softvimData;
+    CefString(&settings.cache_path) = softvimCache;
+  }
 
   // Specify the dedicated subprocess helper path
   wchar_t helperPath[MAX_PATH];
