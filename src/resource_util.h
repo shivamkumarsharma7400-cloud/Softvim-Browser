@@ -18,6 +18,9 @@ std::string GetExecutableDir();
 // Returns the full path to a UI resource file (e.g., "ui/index.html").
 std::string GetUIResourcePath(const std::string& relative_path);
 
+// Returns the full file:/// URL to the new tab start page.
+std::string GetNewTabUrl();
+
 }  // namespace ResourceUtil
 
 #endif  // SOFTVIM_RESOURCE_UTIL_H_

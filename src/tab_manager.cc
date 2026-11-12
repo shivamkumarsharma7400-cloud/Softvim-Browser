@@ -4,6 +4,7 @@
 #include "tab_manager.h"
 #include <algorithm>
 #include "include/internal/cef_types_wrappers.h"
+#include "resource_util.h"
 
 TabManager::TabManager(HWND parent_hwnd, int top_offset)
     : parent_hwnd_(parent_hwnd), top_offset_(top_offset) {
@@ -18,9 +19,10 @@ TabManager::~TabManager() {
 
 int TabManager::CreateTab(const std::string& url, bool is_private) {
   int id = next_tab_id_++;
+  std::string target_url = url.empty() ? ResourceUtil::GetNewTabUrl() : url;
   auto tab = std::make_unique<TabInfo>();
   tab->id = id;
-  tab->url = url;
+  tab->url = target_url;
   tab->title = is_private ? "Private Tab" : "New Tab";
   tab->handler = new ClientHandler();
   tab->is_active = false;
@@ -34,6 +36,7 @@ int TabManager::CreateTab(const std::string& url, bool is_private) {
   CefWindowInfo windowInfo;
   CefRect tabBounds(0, top_offset_, width, height);
   windowInfo.SetAsChild(parent_hwnd_, tabBounds);
+  windowInfo.runtime_style = CEF_RUNTIME_STYLE_ALLOY;
 
   CefBrowserSettings settings;
   settings.background_color = is_private ? CefColorSetARGB(255, 0x1C, 0x1C, 0x1E) : CefColorSetARGB(255, 0xFF, 0xFF, 0xFF);
@@ -44,7 +47,7 @@ int TabManager::CreateTab(const std::string& url, bool is_private) {
   CefBrowserHost::CreateBrowser(
       windowInfo,
       tab->handler,
-      url,
+      target_url,
       settings,
       nullptr,
       request_context

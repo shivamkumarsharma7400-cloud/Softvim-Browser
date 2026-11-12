@@ -65,7 +65,7 @@ class UiQueryHandler : public CefMessageRouterBrowserSide::Handler {
     // Tab Actions (Regular & Private Mode)
     else if (req.find("\"action\":\"new_tab\"") != std::string::npos) {
       bool is_private = (req.find("\"is_private\":true") != std::string::npos);
-      int new_id = window->CreateTab("https://www.google.com", is_private);
+      int new_id = window->CreateTab("", is_private);
       callback->Success(std::to_string(new_id));
       return true;
     } else if (req.find("\"action\":\"switch_tab\"") != std::string::npos) {

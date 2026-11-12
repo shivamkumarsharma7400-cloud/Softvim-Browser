@@ -21,7 +21,7 @@ class BrowserWindow {
   CefRefPtr<CefBrowser> GetUiBrowser() const;
 
   // Tab management actions invoked from UI
-  int CreateTab(const std::string& url = "https://www.google.com", bool is_private = false);
+  int CreateTab(const std::string& url = "", bool is_private = false);
   bool CloseTab(int tab_id);
   bool SwitchToTab(int tab_id);
 

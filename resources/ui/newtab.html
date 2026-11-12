@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Tab — Softvim Browser</title>
+    <link rel="stylesheet" href="styles/theme.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text-primary);
+            font-family: var(--font-family);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            position: relative;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 50% 30%, rgba(10, 132, 255, 0.08) 0%, transparent 60%),
+                radial-gradient(circle at 80% 80%, rgba(175, 82, 222, 0.05) 0%, transparent 50%);
+        }
+
+        .container {
+            width: 100%;
+            max-width: 780px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            animation: fadeIn 350ms cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(12px) scale(0.98);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        /* Branding Hero */
+        .brand-hero {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 2.25rem;
+        }
+
+        .hero-logo-wrapper {
+            position: relative;
+            margin-bottom: 1.25rem;
+        }
+
+        .hero-logo-glow {
+            position: absolute;
+            inset: -8px;
+            background: radial-gradient(circle, rgba(10, 132, 255, 0.35) 0%, transparent 70%);
+            border-radius: 50%;
+            filter: blur(14px);
+            opacity: 0.7;
+            pointer-events: none;
+        }
+
+        .hero-logo {
+            width: 76px;
+            height: 76px;
+            object-fit: contain;
+            position: relative;
+            filter: drop-shadow(0 4px 16px rgba(0, 0, 0, 0.4));
+            transition: transform 300ms ease;
+        }
+
+        .hero-logo:hover {
+            transform: scale(1.05);
+        }
+
+        .brand-title {
+            font-size: 32px;
+            font-weight: 700;
+            letter-spacing: -0.03em;
+            color: var(--text-primary);
+            margin-bottom: 0.35rem;
+        }
+
+        .brand-subtitle {
+            font-size: 14px;
+            color: var(--text-secondary);
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            font-weight: 500;
+            opacity: 0.85;
+        }
+
+        /* Search Omnibox */
+        .search-box-wrapper {
+            width: 100%;
+            max-width: 640px;
+            position: relative;
+            margin-bottom: 2.5rem;
+        }
+
+        .search-form {
+            display: flex;
+            align-items: center;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 28px;
+            padding: 8px 14px 8px 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.05);
+            transition: all 200ms ease;
+        }
+
+        .search-form:focus-within {
+            border-color: var(--accent);
+            box-shadow: 0 6px 24px rgba(10, 132, 255, 0.25), 0 0 0 1px var(--accent);
+            transform: translateY(-1px);
+        }
+
+        .search-icon {
+            width: 18px;
+            height: 18px;
+            stroke: var(--text-secondary);
+            margin-right: 12px;
+            flex-shrink: 0;
+        }
+
+        .search-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: var(--text-primary);
+            font-size: 15px;
+            font-family: inherit;
+        }
+
+        .search-input::placeholder {
+            color: var(--text-secondary);
+            opacity: 0.8;
+        }
+
+        .engine-select {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 12px;
+            font-weight: 500;
+            padding: 6px 10px;
+            border-radius: 14px;
+            outline: none;
+            cursor: pointer;
+            margin-right: 4px;
+            transition: background 120ms ease, color 120ms ease;
+        }
+
+        .engine-select:hover {
+            background: var(--hover);
+            color: var(--text-primary);
+        }
+
+        .search-submit-btn {
+            background: var(--accent);
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #FFFFFF;
+            cursor: pointer;
+            transition: transform 120ms ease, background 120ms ease;
+            flex-shrink: 0;
+        }
+
+        .search-submit-btn:hover {
+            background: var(--accent-hover);
+            transform: scale(1.05);
+        }
+
+        /* Speed Dial Grid */
+        .shortcuts-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            width: 100%;
+            max-width: 640px;
+            margin-bottom: 2.5rem;
+        }
+
+        @media (max-width: 580px) {
+            .shortcuts-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .shortcut-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 18px 12px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            text-decoration: none;
+            color: var(--text-primary);
+            transition: transform 150ms ease, background 150ms ease, box-shadow 150ms ease, border-color 150ms ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .shortcut-card:hover {
+            transform: translateY(-3px);
+            background: var(--hover);
+            border-color: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+        }
+
+        .shortcut-icon-box {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 10px;
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .shortcut-title {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        /* Footer badges */
+        .footer-bar {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-top: 1rem;
+            color: var(--text-secondary);
+            font-size: 12px;
+        }
+
+        .footer-badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+        }
+
+        .footer-badge svg {
+            width: 14px;
+            height: 14px;
+            color: var(--accent);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Softvim Hero Branding -->
+        <div class="brand-hero">
+            <div class="hero-logo-wrapper">
+                <div class="hero-logo-glow"></div>
+                <img src="icons/logo_transparent.png" class="hero-logo" alt="Softvim Logo" />
+            </div>
+            <h1 class="brand-title">Softvim Browser</h1>
+            <p class="brand-subtitle">Fast • Minimal • Private</p>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="search-box-wrapper">
+            <form class="search-form" id="search-form">
+                <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+                <input 
+                    type="text" 
+                    class="search-input" 
+                    id="search-input" 
+                    placeholder="Search Google or enter URL" 
+                    autocomplete="off" 
+                    spellcheck="false" 
+                    autofocus 
+                />
+                <select class="engine-select" id="engine-select" title="Choose Search Engine">
+                    <option value="google" selected>Google</option>
+                    <option value="duckduckgo">DuckDuckGo</option>
+                    <option value="bing">Bing</option>
+                </select>
+                <button type="submit" class="search-submit-btn" title="Search or Go">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                        <polyline points="12 5 19 12 12 19"></polyline>
+                    </svg>
+                </button>
+            </form>
+        </div>
+
+        <!-- Speed Dial Shortcuts -->
+        <div class="shortcuts-grid">
+            <a class="shortcut-card" href="https://www.google.com">
+                <div class="shortcut-icon-box" style="background: rgba(66, 133, 244, 0.15); color: #4285F4;">
+                    G
+                </div>
+                <span class="shortcut-title">Google</span>
+            </a>
+
+            <a class="shortcut-card" href="https://www.youtube.com">
+                <div class="shortcut-icon-box" style="background: rgba(255, 0, 0, 0.15); color: #FF0000;">
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
+                        <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                    </svg>
+                </div>
+                <span class="shortcut-title">YouTube</span>
+            </a>
+
+            <a class="shortcut-card" href="https://github.com">
+                <div class="shortcut-icon-box" style="background: rgba(255, 255, 255, 0.1); color: #F5F5F7;">
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
+                        <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/>
+                    </svg>
+                </div>
+                <span class="shortcut-title">GitHub</span>
+            </a>
+
+            <a class="shortcut-card" href="https://chatgpt.com">
+                <div class="shortcut-icon-box" style="background: rgba(16, 163, 127, 0.15); color: #10A37F;">
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+                        <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+                        <polyline points="2 17 12 22 22 17"></polyline>
+                        <polyline points="2 12 12 17 22 12"></polyline>
+                    </svg>
+                </div>
+                <span class="shortcut-title">ChatGPT</span>
+            </a>
+
+            <a class="shortcut-card" href="https://x.com">
+                <div class="shortcut-icon-box" style="background: rgba(255, 255, 255, 0.08); color: #FFFFFF;">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                        <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                    </svg>
+                </div>
+                <span class="shortcut-title">X (Twitter)</span>
+            </a>
+
+            <a class="shortcut-card" href="https://www.reddit.com">
+                <div class="shortcut-icon-box" style="background: rgba(255, 69, 0, 0.15); color: #FF4500;">
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
+                        <circle cx="12" cy="12" r="10"/>
+                    </svg>
+                </div>
+                <span class="shortcut-title">Reddit</span>
+            </a>
+
+            <a class="shortcut-card" href="https://www.wikipedia.org">
+                <div class="shortcut-icon-box" style="background: rgba(255, 255, 255, 0.1); color: #FFFFFF;">
+                    W
+                </div>
+                <span class="shortcut-title">Wikipedia</span>
+            </a>
+
+            <a class="shortcut-card" href="https://duckduckgo.com">
+                <div class="shortcut-icon-box" style="background: rgba(222, 88, 51, 0.15); color: #DE5833;">
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <path d="M8 14s1.5 2 4 2 4-2 4-2"></path>
+                        <line x1="9" y1="9" x2="9.01" y2="9"></line>
+                        <line x1="15" y1="9" x2="15.01" y2="9"></line>
+                    </svg>
+                </div>
+                <span class="shortcut-title">DuckDuckGo</span>
+            </a>
+        </div>
+
+        <!-- Footer Info -->
+        <div class="footer-bar">
+            <div class="footer-badge">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                </svg>
+                <span>Tracker & Ad Protection Ready</span>
+            </div>
+            <div class="footer-badge">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                </svg>
+                <span>Hardware Accelerated</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const searchEngines = {
+            google: 'https://www.google.com/search?q=',
+            duckduckgo: 'https://duckduckgo.com/?q=',
+            bing: 'https://www.bing.com/search?q='
+        };
+
+        function isLikelyUrl(text) {
+            if (!text) return false;
+            if (/^[a-zA-Z][a-zA-Z0-9+.-]*:\/\//i.test(text)) return true;
+            if (/^localhost(:\d+)?(\/.*)?$/i.test(text)) return true;
+            if (/^127\.0\.0\.1(:\d+)?(\/.*)?$/.test(text)) return true;
+            if (!text.includes(' ') && text.includes('.')) {
+                return /^[a-zA-Z0-9-]+(\.[a-zA-Z0-9-]+)+(:[0-9]+)?(\/.*|\?.*)?$/.test(text);
+            }
+            return false;
+        }
+
+        function handleNavigate(text) {
+            const query = text.trim();
+            if (!query) return;
+
+            if (isLikelyUrl(query)) {
+                if (!/^[a-zA-Z][a-zA-Z0-9+.-]*:\/\//i.test(query)) {
+                    window.location.href = 'https://' + query;
+                } else {
+                    window.location.href = query;
+                }
+            } else {
+                const engineKey = document.getElementById('engine-select').value || 'google';
+                const baseUrl = searchEngines[engineKey] || searchEngines.google;
+                window.location.href = baseUrl + encodeURIComponent(query);
+            }
+        }
+
+        document.getElementById('search-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const input = document.getElementById('search-input');
+            handleNavigate(input.value);
+        });
+    </script>
+</body>
+</html>

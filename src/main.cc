@@ -8,6 +8,7 @@
 
 #include <windows.h>
 #include <shlwapi.h>
+#include <shobjidl.h>
 
 #include "app.h"
 #include "include/cef_app.h"
@@ -18,6 +19,9 @@ int APIENTRY wWinMain(HINSTANCE hInstance,
                       HINSTANCE hPrevInstance,
                       LPWSTR lpCmdLine,
                       int nCmdShow) {
+  // Explicitly associate process with Softvim Browser for Windows taskbar branding
+  SetCurrentProcessExplicitAppUserModelID(L"Softvim.SoftvimBrowser.App");
+
   // Provide CEF with command-line arguments.
   CefMainArgs main_args(hInstance);
 

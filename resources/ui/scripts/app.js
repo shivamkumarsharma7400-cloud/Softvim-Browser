@@ -247,6 +247,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    const btnBrand = document.getElementById('btn-brand');
+    if (btnBrand) btnBrand.addEventListener('click', () => NativeHost.newTab(false));
+
     if (btnBack) btnBack.addEventListener('click', () => NativeHost.goBack());
     if (btnForward) btnForward.addEventListener('click', () => NativeHost.goForward());
     if (btnReload) btnReload.addEventListener('click', () => NativeHost.reload());
@@ -451,8 +454,13 @@ function renderSettings(container) {
             </div>
         </div>
 
-        <div class="settings-section" style="margin-top:auto; padding:0 8px; opacity:0.6; font-size:11px; text-align:center;">
-            Softvim Browser v0.1.0 • Powered by Chromium CEF
+        <div class="settings-section" style="margin-top:auto; padding:16px 8px; text-align:center; border-top: 1px solid var(--border);">
+            <div style="display:inline-flex; align-items:center; gap:8px; margin-bottom:6px;">
+                <img src="icons/logo_transparent.png" style="width:22px; height:22px; object-fit:contain;" alt="Softvim" />
+                <span style="font-weight:600; font-size:13px; color:var(--text-primary);">Softvim Browser</span>
+            </div>
+            <div style="color:var(--text-secondary); font-size:11px;">Version 0.1.0 (Alloy Engine)</div>
+            <div style="color:var(--text-secondary); font-size:11px; opacity:0.75; margin-top:2px;">Fast • Minimal • Private</div>
         </div>
     `;
 
@@ -519,9 +527,9 @@ window.onTabCreated = function(tabData) {
     tabElem.className = 'tab active' + (isPrivate ? ' private-tab' : '');
     tabElem.setAttribute('data-tab-id', tabData.id);
     tabElem.innerHTML = `
-        <svg class="tab-favicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            ${isPrivate ? '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>' : '<circle cx="12" cy="12" r="10"></circle><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon>'}
-        </svg>
+        ${isPrivate ? 
+            '<svg class="tab-favicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>' : 
+            '<img class="tab-favicon" src="icons/logo_transparent.png" alt="" />'}
         <span class="tab-title">${tabData.title || 'New Tab'}</span>
         <span class="tab-close" title="Close Tab (Ctrl+W)">
             <svg viewBox="0 0 24 24" width="10" height="10" stroke="currentColor" stroke-width="2.5" fill="none">
@@ -552,7 +560,11 @@ window.onTabSwitched = function(state) {
     if (targetTab) targetTab.classList.add('active');
 
     const addressInput = document.getElementById('address-input');
-    if (addressInput) addressInput.value = state.url;
+    if (addressInput) {
+        const isNewTab = !state.url || state.url.includes('newtab.html') || state.url.startsWith('file:///');
+        addressInput.value = isNewTab ? '' : state.url;
+        addressInput.placeholder = isNewTab ? 'Search Google or enter URL' : 'Search Google or enter URL';
+    }
 
     const btnBack = document.getElementById('btn-back');
     const btnForward = document.getElementById('btn-forward');
@@ -568,12 +580,16 @@ window.updateBrowserState = function(state) {
             if (state.url) {
                 const addressInput = document.getElementById('address-input');
                 if (addressInput && document.activeElement !== addressInput) {
-                    addressInput.value = state.url;
+                    const isNewTab = state.url.includes('newtab.html') || state.url.startsWith('file:///');
+                    addressInput.value = isNewTab ? '' : state.url;
                 }
             }
             if (state.title) {
                 const titleSpan = activeTab.querySelector('.tab-title');
-                if (titleSpan) titleSpan.textContent = state.title;
+                if (titleSpan) {
+                    const isNewTab = state.title.includes('New Tab') || state.title.includes('newtab');
+                    titleSpan.textContent = isNewTab ? 'New Tab' : state.title;
+                }
             }
             if (typeof state.canGoBack !== 'undefined') {
                 const btnBack = document.getElementById('btn-back');

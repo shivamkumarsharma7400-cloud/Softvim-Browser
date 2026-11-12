@@ -62,6 +62,10 @@ jobs:
           }
 
           Copy-Item "$outPath/*" $distDir -Recurse -Force
+          # Explicitly ensure custom UI and branding files are present in the distribution
+          Copy-Item "resources/ui" "$distDir/ui" -Recurse -Force
+          Copy-Item "resources/softvim.ico" "$distDir/softvim.ico" -Force
+          Copy-Item "resources/softvim_icon.png" "$distDir/softvim_icon.png" -Force
           Write-Host "Staged application directory successfully."
 
           # Create a fast portable zip for instant download

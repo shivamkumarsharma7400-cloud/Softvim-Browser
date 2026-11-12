@@ -80,7 +80,28 @@ std::string GetExecutableDir() {
 }
 
 std::string GetUIResourcePath(const std::string& relative_path) {
-  return GetExecutableDir() + "\\" + relative_path;
+  std::string exe_dir = GetExecutableDir();
+  std::string path1 = exe_dir + "\\" + relative_path;
+  if (GetFileAttributesA(path1.c_str()) != INVALID_FILE_ATTRIBUTES) {
+    return path1;
+  }
+  std::string path2 = exe_dir + "\\..\\resources\\" + relative_path;
+  if (GetFileAttributesA(path2.c_str()) != INVALID_FILE_ATTRIBUTES) {
+    return path2;
+  }
+  std::string path3 = exe_dir + "\\..\\..\\resources\\" + relative_path;
+  if (GetFileAttributesA(path3.c_str()) != INVALID_FILE_ATTRIBUTES) {
+    return path3;
+  }
+  return path1;
+}
+
+std::string GetNewTabUrl() {
+  std::string path = "file:///" + GetUIResourcePath("ui\\newtab.html");
+  for (char& c : path) {
+    if (c == '\\') c = '/';
+  }
+  return path;
 }
 
 }  // namespace ResourceUtil

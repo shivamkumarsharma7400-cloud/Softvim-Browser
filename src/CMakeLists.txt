@@ -154,6 +154,15 @@ add_custom_command(TARGET ${SOFTVIM_TARGET} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
         "${SOFTVIM_UI_DIR}"
         "${SOFTVIM_OUTPUT_DIR}/ui"
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${SOFTVIM_UI_DIR}"
+        "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/ui"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${CMAKE_CURRENT_SOURCE_DIR}/../resources/softvim.ico"
+        "${SOFTVIM_OUTPUT_DIR}/softvim.ico"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${CMAKE_CURRENT_SOURCE_DIR}/../resources/softvim_icon.png"
+        "${SOFTVIM_OUTPUT_DIR}/softvim_icon.png"
     COMMENT "Copying CEF binaries, resources, and UI files..."
 )
 

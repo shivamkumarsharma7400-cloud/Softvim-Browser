@@ -10,14 +10,15 @@
 </head>
 <body>
     <header class="browser-chrome">
-        <!-- Compact Safari-Inspired Tab Bar -->
+        <!-- Compact Safari-Inspired Tab Bar with Softvim Branding -->
         <div class="tab-bar">
+            <div class="brand-badge" id="btn-brand" title="Softvim Browser (Click for New Tab)">
+                <img src="icons/logo_transparent.png" class="brand-logo" alt="Softvim" />
+                <span class="brand-text">Softvim</span>
+            </div>
             <div class="tab active" data-tab-id="1">
-                <svg class="tab-favicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon>
-                </svg>
-                <span class="tab-title">Google</span>
+                <img class="tab-favicon" src="icons/logo_transparent.png" alt="" />
+                <span class="tab-title">New Tab</span>
                 <span class="tab-close" title="Close Tab (Ctrl+W)">
                     <svg viewBox="0 0 24 24" width="10" height="10" stroke="currentColor" stroke-width="2.5" fill="none">
                         <line x1="18" y1="6" x2="6" y2="18"></line>

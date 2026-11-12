@@ -44,6 +44,30 @@ void ClientHandler::OnAddressChange(CefRefPtr<CefBrowser> browser,
   }
 }
 
+bool ClientHandler::OnBeforePopup(
+    CefRefPtr<CefBrowser> browser,
+    CefRefPtr<CefFrame> frame,
+    int popup_id,
+    const CefString& target_url,
+    const CefString& target_frame_name,
+    CefLifeSpanHandler::WindowOpenDisposition target_disposition,
+    bool user_gesture,
+    const CefPopupFeatures& popupFeatures,
+    CefWindowInfo& windowInfo,
+    CefRefPtr<CefClient>& client,
+    CefBrowserSettings& settings,
+    CefRefPtr<CefDictionaryValue>& extra_info,
+    bool* no_javascript_access) {
+  CEF_REQUIRE_UI_THREAD();
+  BrowserWindow* window = BrowserWindow::GetInstance();
+  if (window && !target_url.empty()) {
+    window->CreateTab(target_url.ToString());
+    return true;  // Prevent standalone unstyled CEF popup
+  }
+  windowInfo.runtime_style = CEF_RUNTIME_STYLE_ALLOY;
+  return false;
+}
+
 void ClientHandler::OnAfterCreated(CefRefPtr<CefBrowser> browser) {
   CEF_REQUIRE_UI_THREAD();
   if (!browser_) {

@@ -41,9 +41,10 @@ CefRefPtr<CefBrowser> BrowserWindow::GetUiBrowser() const {
 
 int BrowserWindow::CreateTab(const std::string& url, bool is_private) {
   if (tab_manager_) {
-    int tab_id = tab_manager_->CreateTab(url, is_private);
+    std::string target_url = url.empty() ? ResourceUtil::GetNewTabUrl() : url;
+    int tab_id = tab_manager_->CreateTab(target_url, is_private);
     if (ui_handler_) {
-      ui_handler_->OnTabCreated(tab_id, is_private ? "Private Tab" : "New Tab", url);
+      ui_handler_->OnTabCreated(tab_id, is_private ? "Private Tab" : "New Tab", target_url);
     }
     return tab_id;
   }
@@ -113,11 +114,17 @@ bool BrowserWindow::CreateNativeWindow() {
   wcex.hbrBackground = CreateSolidBrush(RGB(0x1C, 0x1C, 0x1E));
   wcex.lpszClassName = kWindowClass;
 
-  wcex.hIcon = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(101));
+  wcex.hIcon = (HICON)LoadImageW(wcex.hInstance, MAKEINTRESOURCE(101), IMAGE_ICON, 0, 0, LR_DEFAULTSIZE | LR_SHARED);
+  if (!wcex.hIcon) {
+    wcex.hIcon = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(101));
+  }
   if (!wcex.hIcon) {
     wcex.hIcon = LoadIcon(nullptr, IDI_APPLICATION);
   }
-  wcex.hIconSm = wcex.hIcon;
+  wcex.hIconSm = (HICON)LoadImageW(wcex.hInstance, MAKEINTRESOURCE(101), IMAGE_ICON, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), LR_SHARED);
+  if (!wcex.hIconSm) {
+    wcex.hIconSm = wcex.hIcon;
+  }
 
   if (!RegisterClassExW(&wcex)) {
     return false;
@@ -146,6 +153,10 @@ bool BrowserWindow::CreateNativeWindow() {
     return false;
   }
 
+  // Ensure window and taskbar use Softvim Browser icon
+  SendMessage(hwnd_, WM_SETICON, ICON_BIG, (LPARAM)wcex.hIcon);
+  SendMessage(hwnd_, WM_SETICON, ICON_SMALL, (LPARAM)wcex.hIconSm);
+
   // Windows 11/10 Dark Title Bar
   BOOL useDarkMode = TRUE;
   DwmSetWindowAttribute(hwnd_, 20, &useDarkMode, sizeof(useDarkMode));
@@ -165,6 +176,7 @@ void BrowserWindow::CreateBrowsers() {
   CefWindowInfo uiWindowInfo;
   CefRect uiBounds(0, 0, width, kUiChromeHeight);
   uiWindowInfo.SetAsChild(hwnd_, uiBounds);
+  uiWindowInfo.runtime_style = CEF_RUNTIME_STYLE_ALLOY;
 
   CefBrowserSettings uiSettings;
   uiSettings.background_color = CefColorSetARGB(255, 0x1C, 0x1C, 0x1E);
@@ -184,7 +196,7 @@ void BrowserWindow::CreateBrowsers() {
   );
 
   tab_manager_ = std::make_unique<TabManager>(hwnd_, kUiChromeHeight);
-  tab_manager_->CreateTab("https://www.google.com");
+  tab_manager_->CreateTab(ResourceUtil::GetNewTabUrl());
 }
 
 LRESULT CALLBACK BrowserWindow::WndProc(
